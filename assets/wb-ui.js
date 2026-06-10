@@ -71,7 +71,13 @@ function refreshSidebar() {
     const wsEl = document.createElement('div'); wsEl.className = 'ws';
     const head = document.createElement('div'); head.className = 'ws-head';
     const nm = document.createElement('input'); nm.className = 'nm'; nm.value = ws.name; nm.spellcheck = false;
-    nm.addEventListener('change', () => { ws.name = nm.value.trim() || ws.name; save(); refreshBrand(); });
+    nm.addEventListener('change', () => {
+      ws.name = nm.value.trim() || ws.name;
+      // persist the workspace name on every board of this workspace
+      WS.boards.filter(b => b.wsId === ws.id).forEach(b => pushBoard(b));
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(WS)); } catch (e) {}
+      refreshBrand();
+    });
     head.appendChild(nm);
     const addBtn = document.createElement('button'); addBtn.className = 'ic'; addBtn.title = 'Nueva pizarra';
     addBtn.innerHTML = '<i data-lucide="plus"></i>'; addBtn.onclick = () => newBoard(ws.id);
@@ -105,7 +111,7 @@ function boardRow(b) {
   row.innerHTML = `<div class="dot"></div>`;
   const col = document.createElement('div'); col.className = 'col';
   const nm = document.createElement('input'); nm.className = 'bd-nm'; nm.value = b.name; nm.spellcheck = false;
-  nm.addEventListener('change', () => { b.name = nm.value.trim() || b.name; save(); refreshBrand(); });
+  nm.addEventListener('change', () => { b.name = nm.value.trim() || b.name; pushBoard(b); try { localStorage.setItem(STORE_KEY, JSON.stringify(WS)); } catch (e) {} refreshBrand(); });
   nm.addEventListener('pointerdown', e => e.stopPropagation());
   col.appendChild(nm);
   const meta = document.createElement('div'); meta.className = 'bd-meta';
@@ -132,7 +138,9 @@ function newBoard(wsId) {
   const b = { id: uid(), wsId, name: 'Pizarra ' + (WS.boards.filter(x => x.wsId === wsId).length + 1),
     createdAt: now, updatedAt: now, shapes: [], cam: { x: W/2, y: H/2, z: 1 }, bg: WB.bg };
   WS.boards.push(b); WS.currentBoardId = b.id;
-  applyBoard(b); refreshSidebar(); refreshBrand(); save();
+  applyBoard(b); refreshSidebar(); refreshBrand();
+  pushBoard(b);                       // create in Directus right away
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(WS)); } catch (e) {}
 }
 function newWorkspace() {
   const wsId = uid();
@@ -151,16 +159,22 @@ function switchBoard(id) {
 }
 function deleteBoard(id) {
   if (WS.boards.length <= 1) return;
+  const b = WS.boards.find(x => x.id === id);
+  if (b && (b._dirId || b.id)) deleteBoardFromDirectus(b._dirId || b.id);
   WS.boards = WS.boards.filter(b => b.id !== id);
   if (WS.currentBoardId === id) { WS.currentBoardId = WS.boards[0].id; applyBoard(currentBoard()); }
-  refreshSidebar(); refreshBrand(); save();
+  refreshSidebar(); refreshBrand();
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(WS)); } catch (e) {}
 }
 function deleteWorkspace(id) {
   const wsBoards = WS.boards.filter(b => b.wsId === id);
+  wsBoards.forEach(b => { if (b._dirId || b.id) deleteBoardFromDirectus(b._dirId || b.id); });
   WS.workspaces = WS.workspaces.filter(w => w.id !== id);
   WS.boards = WS.boards.filter(b => b.wsId !== id);
+  if (!WS.boards.length) { newBoard(uid()); return; }
   if (wsBoards.some(b => b.id === WS.currentBoardId)) { WS.currentBoardId = WS.boards[0].id; applyBoard(currentBoard()); }
-  refreshSidebar(); refreshBrand(); save();
+  refreshSidebar(); refreshBrand();
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(WS)); } catch (e) {}
 }
 function refreshBrand() {
   const b = currentBoard(); if (!b) return;

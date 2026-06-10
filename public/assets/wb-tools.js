@@ -296,11 +296,13 @@ function placeShapeText(shape) {
     display: 'flex', alignItems: 'center'
   });
   ta.value = shape.text || '';
+  shape._editing = true;
   document.body.appendChild(ta);
   const finish = () => {
     shape.text = ta.value.trim();
     if (!shape.textFs) shape.textFs = fs;
     if (!shape.textColor) shape.textColor = '#1d2128';
+    delete shape._editing;
     commit(); ta.remove();
   };
   ta.addEventListener('keydown', e => { if (e.key === 'Escape') { ta.value = shape.text || ''; ta.blur(); } e.stopPropagation(); });

@@ -204,7 +204,7 @@ function drawDots(ctx, b, color) {
 
 /* draw text centered inside a shape */
 function drawShapeText(ctx, s) {
-  if (!s.text) return;
+  if (!s.text || s._editing) return;
   const padding = 12;
   const fs = s.textFs || 24;
   drawCenteredText(ctx, s.text, s.x + s.w / 2, s.y + s.h / 2, Math.max(20, s.w - padding * 2), fs, s.textColor || '#1d2128', s.align || 'center');
@@ -212,6 +212,7 @@ function drawShapeText(ctx, s) {
 
 /* draw text along a line/arrow at midpoint */
 function drawLineText(ctx, s) {
+  if (s._editing) return;
   const mx = (s.x1 + s.x2) / 2, my = (s.y1 + s.y2) / 2;
   const angle = Math.atan2(s.y2 - s.y1, s.x2 - s.x1);
   const fs = s.textFs || 18;
@@ -448,12 +449,14 @@ async function pushBoard(b) {
   // Only use JSON columns (shapes, cam) — the string columns (name/workspace)
   // have a broken length constraint in this Directus instance, so we fold
   // name/workspace/bg into cam to sidestep them entirely.
+  const wsName = (WS.workspaces.find(w => w.id === b.wsId) || {}).name || 'Mi taller';
   const payload = {
     shapes: b.shapes || [],
     cam: Object.assign({}, b.cam || { x: 0, y: 0, z: 1 }, {
       _bg: b.bg || 'dots',
       _name: b.name || 'Sin título',
       _ws: b.wsId || '',
+      _wsName: wsName,
     }),
   };
   try {
@@ -512,20 +515,20 @@ async function fetchOneBoard(dirId) {
   } catch (e) { return null; }
 }
 
+/* Delete a board from Directus */
+async function deleteBoardFromDirectus(dirId) {
+  if (!dirId) return;
+  try { await fetch(`${DIRECTUS_URL}/items/boards/${dirId}`, { method: 'DELETE' }); }
+  catch (e) {}
+}
+
 function buildWSFromDirectus(rows) {
   const workspaces = []; const wsSeen = {}; const boards = [];
   rows.forEach(d => {
     const wsId = (d.cam && d.cam._ws) || d.workspace || 'mi-taller';
     if (!wsSeen[wsId]) {
       wsSeen[wsId] = true;
-      // try to recover workspace name from localStorage if available
-      let nm = 'Mi taller';
-      try {
-        const raw = localStorage.getItem(STORE_KEY); if (raw) {
-          const old = JSON.parse(raw); const w = (old.workspaces || []).find(x => x.id === wsId);
-          if (w) nm = w.name;
-        }
-      } catch (e) {}
+      const nm = (d.cam && d.cam._wsName) || 'Mi taller';
       workspaces.push({ id: wsId, name: nm });
     }
     boards.push({
@@ -542,27 +545,34 @@ function buildWSFromDirectus(rows) {
 }
 
 function loadAll() {
-  let hadLocal = false;
+  let prevDirId = null;
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw) { WS = JSON.parse(raw); hadLocal = true; }
+    if (raw) {
+      WS = JSON.parse(raw);
+      const cb = WS.boards && WS.boards.find(b => b.id === WS.currentBoardId);
+      prevDirId = cb && (cb._dirId || cb.id);
+    }
   } catch (e) {}
   if (!WS) WS = freshWorkspace();
   if (WS.font) WB.font = WS.font; if (WS.theme) WB.theme = WS.theme;
   applyBoard(currentBoard());
 
-  // First-time visitors: fetch from Directus to import existing boards
-  if (!hadLocal) {
-    fetchAllBoards().then(rows => {
-      if (rows && rows.length) {
-        WS = buildWSFromDirectus(rows);
-        try { localStorage.setItem(STORE_KEY, JSON.stringify(WS)); } catch (e) {}
-        applyBoard(currentBoard());
-        if (typeof refreshSidebar === 'function') refreshSidebar();
-        if (typeof refreshBrand === 'function') refreshBrand();
+  // Always sync from Directus so every device shows the same boards
+  fetchAllBoards().then(rows => {
+    if (rows && rows.length) {
+      WS = buildWSFromDirectus(rows);
+      // keep the board the user was on, if it still exists
+      if (prevDirId) {
+        const match = WS.boards.find(b => (b._dirId || b.id) === prevDirId);
+        if (match) { WS.currentBoardId = match.id; WS.currentWsId = match.wsId; }
       }
-    });
-  }
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(WS)); } catch (e) {}
+      applyBoard(currentBoard());
+      if (typeof refreshSidebar === 'function') refreshSidebar();
+      if (typeof refreshBrand === 'function') refreshBrand();
+    }
+  });
 }
 function freshWorkspace() {
   const wsId = uid(), bId = uid(), now = Date.now();
