@@ -661,6 +661,7 @@ function openShare() {
     if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.innerHTML = prevHtml; }
     const id = board._dirId || board.id;
     document.getElementById('shareUrl').value = `${location.origin}/#aula=${id}&vista=vivo&tema=${WB.theme || 'default'}`;
+    const bn = document.getElementById('shareBoardName'); if (bn) bn.textContent = board.name || 'Pizarra';
     document.getElementById('shareModal').classList.add('on');
   });
 }
@@ -684,6 +685,9 @@ function enterViewer() {
   const exitBtn = document.getElementById('exitViewer');
   if (exitBtn) exitBtn.style.display = (typeof IS_SPECTATOR !== 'undefined' && IS_SPECTATOR) ? 'none' : '';
   startLivePolling();   // re-read board from server so viewers see real drawings
+  // mostrar el nombre de la pizarra en el indicador EN VIVO
+  const by = document.querySelector('.live-badge .by');
+  if (by) { const nm = (currentBoard() && currentBoard().name) || ''; by.textContent = nm ? ('Prof. Baldemar · ' + nm) : 'Prof. Baldemar está explicando'; }
   viewerLoop();
 }
 function exitViewer() {

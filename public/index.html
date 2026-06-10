@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/wb.css?v=20260610d">
+<link rel="stylesheet" href="assets/wb.css?v=20260610e">
 </head>
 <body>
 <!-- Login (solo el profesor) -->
@@ -112,7 +112,7 @@
   <div class="live-badge">
     <span class="rec"></span>
     <span class="t">EN VIVO</span>
-    <span class="by">Prof. Baldemar está explicando</span>
+    <span class="by" id="liveBy">Prof. Baldemar está explicando</span>
   </div>
   <button class="viewer-exit" id="exitViewer"><i data-lucide="x"></i> Salir de la vista</button>
   <div class="pcursor" id="pcursor">
@@ -133,7 +133,7 @@
   <div class="modal panel" style="position:relative">
     <button class="close" id="shareClose"><i data-lucide="x"></i></button>
     <h2>Compartir en vivo</h2>
-    <p class="sub">Comparte este enlace. Quien lo abra verá tu pizarra y todo lo que dibujes en tiempo real — solo podrá mover y hacer zoom, nada más.</p>
+    <p class="sub">Compartiendo: <strong id="shareBoardName" style="color:var(--accent)">—</strong>. Quien abra el enlace verá esta pizarra y todo lo que dibujes en tiempo real — solo podrá mover y hacer zoom.</p>
     <div class="share-link">
       <input id="shareUrl" readonly value="">
       <button id="copyLink">Copiar</button>
@@ -156,9 +156,9 @@
 </div>
 
 <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-<script src="assets/wb-core.js?v=20260610d"></script>
-<script src="assets/wb-tools.js?v=20260610d"></script>
-<script src="assets/wb-ui.js?v=20260610d"></script>
+<script src="assets/wb-core.js?v=20260610e"></script>
+<script src="assets/wb-tools.js?v=20260610e"></script>
+<script src="assets/wb-ui.js?v=20260610e"></script>
 <script>
   function startApp() {
     document.getElementById('loginScreen').classList.remove('on');
