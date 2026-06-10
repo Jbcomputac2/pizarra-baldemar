@@ -169,8 +169,12 @@ function newWorkspace() {
 }
 function switchBoard(id) {
   if (id === WS.currentBoardId) return closeSidebar();
-  // save current first
-  const cur = currentBoard(); if (cur) { cur.shapes = WB.shapes; cur.cam = WB.cam; cur.bg = WB.bg; cur.updatedAt = Date.now(); }
+  // guardar la pizarra que dejamos: en local Y en Directus
+  const cur = currentBoard();
+  if (cur) {
+    cur.shapes = WB.shapes; cur.cam = WB.cam; cur.bg = WB.bg; cur.updatedAt = Date.now();
+    pushBoard(cur);
+  }
   WS.currentBoardId = id;
   const b = currentBoard();
   WS.currentWsId = b.wsId;
@@ -647,8 +651,14 @@ function exportImage(format) {
 
 function openShare() {
   const board = currentBoard();
+  // Volcar el lienzo actual a la pizarra ANTES de subir, para que el espectador vea lo mismo
+  board.shapes = WB.shapes; board.cam = WB.cam; board.bg = WB.bg; board.updatedAt = Date.now();
+  const btn = document.getElementById('presentBtn');
+  const prevHtml = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.style.opacity = '.7'; btn.innerHTML = 'Preparando…'; }
   // Save first so the board has a Directus id, then build link
   pushBoard(board).then(() => {
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.innerHTML = prevHtml; }
     const id = board._dirId || board.id;
     document.getElementById('shareUrl').value = `${location.origin}/#aula=${id}&vista=vivo&tema=${WB.theme || 'default'}`;
     document.getElementById('shareModal').classList.add('on');
