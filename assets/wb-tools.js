@@ -395,11 +395,33 @@ function onKey(e) {
     WB.sel = copies; commit(); return;
   }
   if (e.key === 'Delete' || e.key === 'Backspace') { if (WB.sel.length) { WB.shapes = WB.shapes.filter(s => !WB.sel.includes(s)); WB.sel = []; commit(); } return; }
+  // mover lo seleccionado con las flechitas (Shift = más rápido)
+  if (WB.sel.length && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+    e.preventDefault();
+    const step = e.shiftKey ? 20 : 2;
+    let dx = 0, dy = 0;
+    if (e.key === 'ArrowUp') dy = -step;
+    else if (e.key === 'ArrowDown') dy = step;
+    else if (e.key === 'ArrowLeft') dx = -step;
+    else if (e.key === 'ArrowRight') dx = step;
+    WB.sel.forEach(s => translateShape(s, dx, dy));
+    nudgeCommit();
+    return;
+  }
   if (e.key === 'Escape') { WB.sel = []; closePopover(); setActiveTool('select'); return; }
   const map = { v: 'select', d: 'draw', p: 'draw', b: 'draw', h: 'highlight', e: 'eraser', r: 'rect', o: 'ellipse', a: 'arrow', l: 'line', t: 'text', n: 'sticky', x: 'laser', s: 'sticky', m: 'hand' };
   const k = e.key.toLowerCase();
   if (map[k] && !mod) setActiveTool(map[k]);
 }
+
+/* commit agrupado para el movimiento con flechas */
+let _nudgeT = null;
+function nudgeCommit() {
+  save();                       // persist + render keeps up
+  clearTimeout(_nudgeT);
+  _nudgeT = setTimeout(() => { commit(); }, 350);
+}
+
 function duplicateSelection() {
   const copies = WB.sel.map(s => { const c = JSON.parse(JSON.stringify(s)); c.id = uid(); translateShape(c, 24, 24); WB.shapes.push(c); return c; });
   WB.sel = copies; commit();
