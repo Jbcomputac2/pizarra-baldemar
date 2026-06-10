@@ -33,7 +33,8 @@ async function maybeEnterViewerFromUrl() {
       const row = await fetchOneBoard(id);
       if (row) {
         b = { id: row.id, _dirId: row.id, wsId: row.workspace || 'remote', name: row.name || 'Pizarra',
-              shapes: row.shapes || [], cam: row.cam || { x: W/2, y: H/2, z: 1 }, bg: row.bg || 'dots' };
+              shapes: row.shapes || [], cam: row.cam || { x: W/2, y: H/2, z: 1 },
+              bg: (row.cam && row.cam._bg) || row.bg || 'dots' };
         if (!WS) WS = freshWorkspace();
         WS.boards.push(b);
       }

@@ -449,8 +449,8 @@ async function pushBoard(b) {
     name: b.name || 'Sin título',
     workspace: b.wsId || '',
     shapes: b.shapes || [],
-    cam: b.cam || { x: 0, y: 0, z: 1 },
-    bg: b.bg || 'dots',
+    // fold bg into cam so we don't depend on a separate 'bg' column
+    cam: Object.assign({}, b.cam || { x: 0, y: 0, z: 1 }, { _bg: b.bg || 'dots' }),
   };
   try {
     if (b._dirId) {
@@ -471,7 +471,7 @@ async function pushBoard(b) {
 
 async function fetchAllBoards() {
   try {
-    const r = await fetch(`${DIRECTUS_URL}/items/boards?limit=-1&fields=id,name,workspace,shapes,cam,bg,date_created,date_updated`);
+    const r = await fetch(`${DIRECTUS_URL}/items/boards?limit=-1&fields=id,name,workspace,shapes,cam,date_created,date_updated`);
     if (!r.ok) return null;
     const j = await r.json();
     return (j && j.data) || null;
@@ -480,7 +480,7 @@ async function fetchAllBoards() {
 
 async function fetchOneBoard(dirId) {
   try {
-    const r = await fetch(`${DIRECTUS_URL}/items/boards/${dirId}?fields=id,name,workspace,shapes,cam,bg`);
+    const r = await fetch(`${DIRECTUS_URL}/items/boards/${dirId}?fields=id,name,workspace,shapes,cam`);
     if (!r.ok) return null;
     const j = await r.json();
     return (j && j.data) || null;
@@ -505,7 +505,8 @@ function buildWSFromDirectus(rows) {
     }
     boards.push({
       id: d.id, _dirId: d.id, wsId, name: d.name || 'Sin título',
-      shapes: d.shapes || [], cam: d.cam || { x: W/2, y: H/2, z: 1 }, bg: d.bg || 'dots',
+      shapes: d.shapes || [], cam: d.cam || { x: W/2, y: H/2, z: 1 },
+      bg: (d.cam && d.cam._bg) || d.bg || 'dots',
       createdAt: d.date_created ? new Date(d.date_created).getTime() : Date.now(),
       updatedAt: d.date_updated ? new Date(d.date_updated).getTime() : Date.now(),
     });
