@@ -32,7 +32,7 @@ async function maybeEnterViewerFromUrl() {
       // fetch from Directus directly
       const row = await fetchOneBoard(id);
       if (row) {
-        b = { id: row.id, _dirId: row.id, wsId: row.workspace || 'remote', name: row.name || 'Pizarra',
+        b = { id: row.id, _dirId: row.id, wsId: (row.cam && row.cam._ws) || row.workspace || 'remote', name: (row.cam && row.cam._name) || row.name || 'Pizarra',
               shapes: row.shapes || [], cam: row.cam || { x: W/2, y: H/2, z: 1 },
               bg: (row.cam && row.cam._bg) || row.bg || 'dots' };
         if (!WS) WS = freshWorkspace();
@@ -537,9 +537,7 @@ function openShare() {
   // Save first so the board has a Directus id, then build link
   pushBoard(board).then(() => {
     const id = board._dirId || board.id;
-    // 🍕 PRUEBA DE DEPLOY: mostramos "pizza" en vez de "pizarra"
-    const base = location.origin.replace('pizarra', 'pizza');
-    document.getElementById('shareUrl').value = `${base}/#aula=${id}&vista=vivo`;
+    document.getElementById('shareUrl').value = `${location.origin}/#aula=${id}&vista=vivo`;
     document.getElementById('shareModal').classList.add('on');
   });
 }
@@ -557,12 +555,26 @@ function enterViewer() {
   sizeViewer();
   window.addEventListener('resize', sizeViewer);
   bindViewerNav();
-  startPresenterDemo();
+  // hide the fake presenter cursor
+  const pc = document.getElementById('pcursor'); if (pc) pc.style.display = 'none';
+  startLivePolling();   // re-read board from server so viewers see real drawings
   viewerLoop();
 }
 function exitViewer() {
   viewer.on = false; document.getElementById('viewer').classList.remove('on');
-  cancelAnimationFrame(viewer.anim); clearTimeout(viewer._demoT);
+  cancelAnimationFrame(viewer.anim); clearTimeout(viewer._demoT); clearInterval(viewer._poll);
+}
+
+/* Poll Directus every 2.5s and update the board the viewer sees */
+function startLivePolling() {
+  const board = currentBoard();
+  const id = board && (board._dirId || board.id);
+  if (!id) return;
+  viewer._poll = setInterval(async () => {
+    if (!viewer.on) return;
+    const row = await fetchOneBoard(id);
+    if (row && row.shapes) { WB.shapes = row.shapes; }
+  }, 2500);
 }
 function sizeViewer() {
   if (!viewer.vcv) return;

@@ -445,12 +445,16 @@ function todayLabel() {
 const DIRECTUS_URL = 'https://directus.jbs.red';
 
 async function pushBoard(b) {
+  // Only use JSON columns (shapes, cam) — the string columns (name/workspace)
+  // have a broken length constraint in this Directus instance, so we fold
+  // name/workspace/bg into cam to sidestep them entirely.
   const payload = {
-    name: b.name || 'Sin título',
-    workspace: b.wsId || '',
     shapes: b.shapes || [],
-    // fold bg into cam so we don't depend on a separate 'bg' column
-    cam: Object.assign({}, b.cam || { x: 0, y: 0, z: 1 }, { _bg: b.bg || 'dots' }),
+    cam: Object.assign({}, b.cam || { x: 0, y: 0, z: 1 }, {
+      _bg: b.bg || 'dots',
+      _name: b.name || 'Sin título',
+      _ws: b.wsId || '',
+    }),
   };
   try {
     let res;
@@ -511,10 +515,10 @@ async function fetchOneBoard(dirId) {
 function buildWSFromDirectus(rows) {
   const workspaces = []; const wsSeen = {}; const boards = [];
   rows.forEach(d => {
-    const wsId = d.workspace || 'mi-taller';
+    const wsId = (d.cam && d.cam._ws) || d.workspace || 'mi-taller';
     if (!wsSeen[wsId]) {
       wsSeen[wsId] = true;
-      // try to recover name from localStorage if available
+      // try to recover workspace name from localStorage if available
       let nm = 'Mi taller';
       try {
         const raw = localStorage.getItem(STORE_KEY); if (raw) {
@@ -525,7 +529,7 @@ function buildWSFromDirectus(rows) {
       workspaces.push({ id: wsId, name: nm });
     }
     boards.push({
-      id: d.id, _dirId: d.id, wsId, name: d.name || 'Sin título',
+      id: d.id, _dirId: d.id, wsId, name: (d.cam && d.cam._name) || d.name || 'Sin título',
       shapes: d.shapes || [], cam: d.cam || { x: W/2, y: H/2, z: 1 },
       bg: (d.cam && d.cam._bg) || d.bg || 'dots',
       createdAt: d.date_created ? new Date(d.date_created).getTime() : Date.now(),

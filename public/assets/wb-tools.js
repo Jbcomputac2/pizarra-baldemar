@@ -49,7 +49,13 @@ function onMove(e) {
     case 'pan': WB.cam.x = act.cx + (p.x - act.sx); WB.cam.y = act.cy + (p.y - act.sy); break;
     case 'create': {
       const s = act.shape;
-      if (s.type === 'draw' || s.type === 'highlight') s.points.push(w);
+      if (s.type === 'draw' || s.type === 'highlight') {
+        const last = s.points[s.points.length - 1];
+        const minDist = 2 / WB.cam.z;   // skip points too close → smaller payload
+        if (!last || Math.hypot(w.x - last.x, w.y - last.y) > minDist) {
+          s.points.push({ x: Math.round(w.x * 10) / 10, y: Math.round(w.y * 10) / 10 });
+        }
+      }
       else if (s.type === 'line' || s.type === 'arrow') {
         s.x2 = w.x; s.y2 = w.y;
         if (e.shiftKey) { const a = Math.atan2(s.y2 - s.y1, s.x2 - s.x1); const d = Math.hypot(s.x2 - s.x1, s.y2 - s.y1); const sn = Math.round(a / (Math.PI / 4)) * (Math.PI / 4); s.x2 = s.x1 + Math.cos(sn) * d; s.y2 = s.y1 + Math.sin(sn) * d; }
