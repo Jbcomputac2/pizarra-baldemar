@@ -1,0 +1,314 @@
+/* ===== Prof. Baldemar — Pizarra ===== */
+:root{
+  --accent:#2A6FDB;
+  --accent-soft:#2A6FDB1a;
+  --accent-press:#1f57b0;
+  --bg:#f4f5f7;
+  --panel:#ffffff;
+  --panel-2:#fbfbfc;
+  --ink:#1d2128;
+  --ink-soft:#5b626e;
+  --ink-faint:#9aa1ad;
+  --line:#e7e9ee;
+  --line-strong:#d6d9e0;
+  --shadow:0 6px 24px -6px rgba(20,28,48,.18), 0 2px 6px -2px rgba(20,28,48,.12);
+  --shadow-lg:0 18px 50px -12px rgba(20,28,48,.30), 0 4px 12px -4px rgba(20,28,48,.16);
+  --radius:14px;
+  --radius-lg:20px;
+  --font:'Poppins', system-ui, -apple-system, sans-serif;
+  --mono:'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --tool: 42px;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;font-family:var(--font);color:var(--ink);
+  -webkit-font-smoothing:antialiased;background:var(--bg);
+  overscroll-behavior:none; touch-action:none;}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+#app{position:fixed;inset:0}
+canvas#board{position:absolute;inset:0;display:block;touch-action:none}
+.cursor-draw{cursor:crosshair}
+.cursor-grab{cursor:grab}
+.cursor-grabbing{cursor:grabbing}
+.cursor-default{cursor:default}
+.cursor-text{cursor:text}
+
+/* ---------- Brand ---------- */
+.brand{position:absolute;top:16px;left:16px;display:flex;align-items:center;gap:10px;
+  padding:9px 14px 9px 11px;z-index:30;user-select:none;cursor:pointer;transition:.15s}
+.brand:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+.brand .mark{width:30px;height:30px;border-radius:9px;background:var(--accent);
+  display:grid;place-items:center;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18), 0 2px 8px -2px var(--accent)}
+.brand .mark svg{width:18px;height:18px}
+.brand .col{display:flex;flex-direction:column;line-height:1;max-width:170px;overflow:hidden}
+.brand .name{font-weight:700;font-size:14.5px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand .sub{font-size:11px;color:var(--ink-faint);font-weight:600;letter-spacing:.02em;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand .chev{color:var(--ink-faint);margin-left:4px;transition:.15s}
+.brand.open .chev{transform:rotate(180deg);color:var(--accent)}
+
+/* ---------- Sidebar (workspaces + boards) ---------- */
+.sidebar{position:absolute;top:62px;left:16px;width:280px;max-height:calc(100vh - 80px);
+  z-index:28;border-radius:18px;padding:8px;display:none;flex-direction:column;overflow:hidden}
+.sidebar.open{display:flex}
+.sidebar .sb-head{display:flex;align-items:center;justify-content:space-between;padding:8px 8px 6px}
+.sidebar .sb-head .lbl{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-faint)}
+.sidebar .sb-head button{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:var(--ink-faint);transition:.1s}
+.sidebar .sb-head button:hover{background:var(--panel-2);color:var(--accent)}
+.sidebar .sb-head button svg{width:14px;height:14px}
+.sidebar .sb-body{overflow-y:auto;padding:0 4px 4px;display:flex;flex-direction:column;gap:6px}
+.sidebar .sb-body::-webkit-scrollbar{width:6px}
+.sidebar .sb-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+.ws{border-radius:11px;background:var(--panel-2);padding:4px 4px 6px}
+.ws-head{display:flex;align-items:center;gap:6px;padding:6px 8px 4px}
+.ws-head .nm{flex:1;font-size:13.5px;font-weight:700;color:var(--ink);background:none;border:none;outline:none;
+  font-family:inherit;padding:2px 0;border-radius:4px}
+.ws-head .nm:focus{background:var(--panel);box-shadow:0 0 0 2px var(--accent-soft)}
+.ws-head .ic{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;color:var(--ink-faint);transition:.1s}
+.ws-head .ic:hover{background:var(--panel);color:var(--accent)}
+.ws-head .ic svg{width:13px;height:13px}
+.boards{display:flex;flex-direction:column;gap:2px}
+.bd{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;cursor:pointer;transition:.1s;position:relative}
+.bd:hover{background:var(--panel)}
+.bd.active{background:var(--accent-soft)}
+.bd.active .bd-nm{color:var(--accent)}
+.bd .dot{width:6px;height:6px;border-radius:50%;background:var(--line-strong);flex:none}
+.bd.active .dot{background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.bd .col{flex:1;min-width:0;display:flex;flex-direction:column}
+.bd-nm{font-size:13px;font-weight:600;color:var(--ink);background:none;border:none;outline:none;
+  font-family:inherit;padding:1px 0;border-radius:3px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd-nm:focus{background:var(--panel-2);box-shadow:0 0 0 2px var(--accent-soft)}
+.bd-meta{font-size:10.5px;color:var(--ink-faint);font-weight:500;margin-top:1px;display:flex;align-items:center;gap:6px}
+.bd-meta .sep{width:3px;height:3px;border-radius:50%;background:var(--ink-faint);opacity:.4}
+.bd .menu{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;color:transparent;flex:none;transition:.1s}
+.bd:hover .menu{color:var(--ink-faint)}
+.bd .menu:hover{background:var(--line);color:var(--ink)}
+.bd .menu svg{width:13px;height:13px}
+.add-bd{display:flex;align-items:center;gap:7px;padding:6px 10px;border-radius:8px;color:var(--ink-faint);
+  font-size:12px;font-weight:600;transition:.1s;width:100%;text-align:left;margin-top:2px}
+.add-bd svg{width:13px;height:13px}
+.add-bd:hover{background:var(--panel);color:var(--accent)}
+.add-ws{display:flex;align-items:center;gap:8px;padding:10px;border-radius:11px;border:1.5px dashed var(--line-strong);
+  color:var(--ink-faint);font-size:12.5px;font-weight:700;justify-content:center;transition:.1s;margin-top:4px}
+.add-ws:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.add-ws svg{width:14px;height:14px}
+
+/* ---------- Floating panels base ---------- */
+.panel{background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);
+  border-radius:var(--radius-lg);backdrop-filter:saturate(1.4) blur(8px)}
+
+/* ---------- Brand (legacy block - replaced above) ---------- */
+
+/* ---------- Top-right controls ---------- */
+.topright{position:absolute;top:16px;right:16px;display:flex;gap:10px;align-items:center;z-index:30}
+.seg{display:flex;padding:4px;gap:2px;border-radius:13px}
+.seg button{display:flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:9px;
+  font-size:12.5px;font-weight:600;color:var(--ink-soft);transition:.13s}
+.seg button svg{width:15px;height:15px}
+.seg button:hover{background:var(--panel-2);color:var(--ink)}
+.seg button.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px -3px var(--accent)}
+
+.btn-present{display:flex;align-items:center;gap:8px;height:42px;padding:0 16px 0 14px;
+  border-radius:13px;background:var(--accent);color:#fff;font-weight:700;font-size:13.5px;
+  box-shadow:0 4px 14px -4px var(--accent);transition:.14s;letter-spacing:-.01em;white-space:nowrap;flex:none}
+.btn-present:hover{background:var(--accent-press);transform:translateY(-1px)}
+.btn-present:active{transform:translateY(0)}
+.btn-present svg{width:16px;height:16px}
+.btn-present .live-dot{width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:0 0 0 0 #fff}
+
+/* ---------- Bottom toolbar ---------- */
+.toolbar-wrap{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:30;
+  display:flex;flex-direction:column;align-items:center;gap:10px}
+.toolbar{display:flex;align-items:center;gap:3px;padding:6px;border-radius:18px}
+.tool{width:var(--tool);height:var(--tool);border-radius:11px;display:grid;place-items:center;
+  color:var(--ink-soft);transition:.12s;position:relative}
+.tool svg{width:21px;height:21px;stroke-width:1.9px}
+.tool:hover{background:var(--panel-2);color:var(--ink)}
+.tool.active{background:var(--accent);color:#fff;box-shadow:0 3px 10px -3px var(--accent)}
+.tool.active svg{stroke-width:2.1px}
+.tool .caret{position:absolute;right:4px;bottom:3px;width:0;height:0;
+  border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:5px solid currentColor;
+  transform:rotate(-45deg);opacity:.55}
+.tool-sep{width:1px;height:26px;background:var(--line);margin:0 4px}
+
+.tool .tip{position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%) translateY(4px);
+  background:var(--ink);color:#fff;font-size:11.5px;font-weight:600;padding:6px 9px;border-radius:8px;
+  white-space:nowrap;opacity:0;pointer-events:none;transition:.12s;letter-spacing:.01em;
+  display:flex;align-items:center;gap:7px;box-shadow:0 4px 14px -4px rgba(0,0,0,.4);z-index:100}
+.tool .tip .k{font-family:var(--mono);font-size:10px;background:rgba(255,255,255,.18);color:#fff;
+  padding:2px 5px;border-radius:5px;line-height:1;letter-spacing:.04em}
+.tool:hover .tip{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ---------- Shapes popover ---------- */
+.popover{position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);
+  display:none;grid-template-columns:repeat(3,1fr);gap:3px;padding:6px;border-radius:16px;z-index:40}
+.popover.open{display:grid}
+.popover .tool{width:38px;height:38px}
+.popover .tool svg{width:19px;height:19px}
+
+/* ---------- Style / properties panel (left) ---------- */
+.props{position:absolute;left:16px;top:50%;transform:translateY(-50%);z-index:25;
+  width:62px;padding:12px 0;display:none;flex-direction:column;align-items:center;gap:14px}
+.props.open{display:flex}
+.props .grp{display:flex;flex-direction:column;align-items:center;gap:7px;width:100%}
+.props .lbl{font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;color:var(--ink-faint);
+  text-transform:uppercase;font-weight:700}
+.swatches{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:0 11px}
+.sw{width:18px;height:18px;border-radius:6px;cursor:pointer;transition:.1s;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.10)}
+.sw:hover{transform:scale(1.12)}
+.sw.active{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}
+.sizes{display:flex;flex-direction:column;gap:9px;align-items:center}
+.size-dot{border-radius:50%;background:var(--ink);cursor:pointer;transition:.1s;opacity:.4}
+.size-dot:hover{opacity:.7}
+.size-dot.active{opacity:1;box-shadow:0 0 0 3px var(--accent-soft)}
+.props .divider{width:32px;height:1px;background:var(--line)}
+.fill-toggle{display:flex;flex-direction:column;gap:5px;align-items:center}
+.fill-btn{width:30px;height:22px;border-radius:6px;display:grid;place-items:center;
+  border:1px solid var(--line);color:var(--ink-faint);transition:.1s;font-size:9px;font-weight:700;font-family:var(--mono)}
+.fill-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+
+.fillstyle{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:0 11px}
+.fill-sw{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:var(--ink);
+  border:1.5px solid var(--line);transition:.1s;background:var(--panel)}
+.fill-sw svg{width:18px;height:18px}
+.fill-sw:hover{border-color:var(--line-strong)}
+.fill-sw.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+
+.aligns{display:flex;gap:3px;padding:0 9px}
+.align-btn{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:var(--ink-soft);transition:.1s}
+.align-btn svg{width:14px;height:14px}
+.align-btn:hover{background:var(--panel-2);color:var(--ink)}
+.align-btn.active{background:var(--accent-soft);color:var(--accent)}
+
+.props{width:78px}
+
+/* ---------- Font picker ---------- */
+.font-btn{display:flex;align-items:center;gap:7px;height:42px;padding:0 13px;border-radius:13px;
+  font-weight:700;font-size:13px;color:var(--ink-soft);transition:.13s;position:relative}
+.font-btn:hover{color:var(--ink)}
+.font-btn .aa{font-size:18px;line-height:1;font-weight:700;color:var(--ink)}
+.font-btn .cur{font-size:12px;color:var(--ink-faint);font-weight:600}
+.font-btn svg{width:14px;height:14px;color:var(--ink-faint)}
+.font-pop{position:absolute;top:calc(100% + 8px);right:0;z-index:45;min-width:208px;padding:7px;
+  border-radius:16px;display:none}
+.font-pop.open{display:block}
+.font-pop .fp{display:flex;flex-direction:column;width:100%;padding:9px 12px;border-radius:11px;text-align:left;transition:.1s}
+.font-pop .fp:hover{background:var(--panel-2)}
+.font-pop .fp.active{background:var(--accent-soft)}
+.font-pop .fp .nm{font-size:18px;line-height:1.15;color:var(--ink)}
+.font-pop .fp .tag{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);margin-top:3px}
+
+/* ---------- Zoom control (bottom-right) ---------- */
+.zoom{position:absolute;bottom:20px;right:16px;z-index:30;display:flex;align-items:center;
+  padding:4px;gap:1px;border-radius:13px}
+.zoom button{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:var(--ink-soft);transition:.12s}
+.zoom button:hover{background:var(--panel-2);color:var(--ink)}
+.zoom button svg{width:17px;height:17px}
+.zoom .pct{min-width:54px;text-align:center;font-size:12.5px;font-weight:700;color:var(--ink);
+  font-variant-numeric:tabular-nums;cursor:pointer;border-radius:8px;height:34px;line-height:34px}
+.zoom .pct:hover{background:var(--panel-2)}
+
+/* ---------- Toast / hint ---------- */
+.hint{position:absolute;bottom:74px;left:50%;transform:translateX(-50%);z-index:24;
+  background:var(--ink);color:#fff;font-size:12px;font-weight:600;padding:8px 14px;border-radius:10px;
+  box-shadow:var(--shadow);opacity:0;transition:.2s;pointer-events:none;letter-spacing:.01em}
+.hint.show{opacity:.96}
+
+/* ---------- Text / sticky editors ---------- */
+.editor{position:absolute;z-index:50;background:transparent;border:none;outline:none;resize:none;
+  overflow:hidden;font-family:var(--font);line-height:1.25;padding:0;margin:0;color:inherit;
+  white-space:pre-wrap;word-break:break-word}
+.sticky-editor{padding:14px;border-radius:4px;box-shadow:var(--shadow-lg);line-height:1.3}
+
+/* ---------- Viewer / presenter mode ---------- */
+#viewer{position:fixed;inset:0;z-index:100;display:none;background:var(--bg)}
+#viewer.on{display:block}
+#viewer canvas{position:absolute;inset:0;cursor:grab}
+#viewer canvas.grabbing{cursor:grabbing}
+.live-badge{position:absolute;top:18px;left:18px;z-index:110;display:flex;align-items:center;gap:9px;
+  padding:9px 15px 9px 12px;border-radius:13px;background:rgba(255,255,255,.86);white-space:nowrap;
+  backdrop-filter:blur(10px) saturate(1.4);border:1px solid var(--line);box-shadow:var(--shadow);user-select:none}
+.live-badge .rec{width:9px;height:9px;border-radius:50%;background:#e0383e;
+  box-shadow:0 0 0 0 rgba(224,56,62,.6);animation:pulse 1.8s infinite}
+.live-badge .t{font-weight:800;font-size:12.5px;letter-spacing:.04em}
+.live-badge .by{font-size:12px;color:var(--ink-soft);font-weight:600;padding-left:9px;margin-left:2px;border-left:1px solid var(--line)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(224,56,62,.55)}70%{box-shadow:0 0 0 9px rgba(224,56,62,0)}100%{box-shadow:0 0 0 0 rgba(224,56,62,0)}}
+.viewer-exit{position:absolute;top:18px;right:18px;z-index:110;display:flex;align-items:center;gap:7px;
+  height:40px;padding:0 15px;border-radius:12px;background:rgba(255,255,255,.86);backdrop-filter:blur(10px);white-space:nowrap;
+  border:1px solid var(--line);box-shadow:var(--shadow);font-weight:700;font-size:13px;color:var(--ink)}
+.viewer-exit:hover{background:#fff}
+.viewer-exit svg{width:15px;height:15px}
+.viewer-hint{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:110;
+  display:flex;align-items:center;gap:14px;padding:9px 16px;border-radius:12px;
+  background:rgba(255,255,255,.86);backdrop-filter:blur(10px);border:1px solid var(--line);box-shadow:var(--shadow);
+  font-size:12px;color:var(--ink-soft);font-weight:600}
+.viewer-hint .kbd{font-family:var(--mono);font-size:10.5px;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:5px;padding:2px 6px;color:var(--ink);margin-right:5px}
+.viewer-hint .dot{width:4px;height:4px;border-radius:50%;background:var(--line-strong)}
+
+/* presenter live cursor */
+.pcursor{position:absolute;z-index:115;pointer-events:none;transition:transform .09s linear;will-change:transform}
+.pcursor svg{width:24px;height:24px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
+.pcursor .tag{position:absolute;left:18px;top:18px;background:var(--accent);color:#fff;
+  font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;white-space:nowrap;
+  box-shadow:0 2px 8px -2px rgba(0,0,0,.3)}
+
+/* ---------- Share modal ---------- */
+.modal-bg{position:fixed;inset:0;z-index:200;background:rgba(20,24,34,.42);backdrop-filter:blur(3px);
+  display:none;align-items:center;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{width:430px;max-width:92vw;padding:26px;border-radius:22px}
+.modal h2{margin:0 0 4px;font-size:19px;font-weight:800;letter-spacing:-.02em}
+.modal p.sub{margin:0 0 20px;color:var(--ink-soft);font-size:13.5px;line-height:1.5}
+.share-link{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:12px;padding:6px 6px 6px 14px;margin-bottom:18px}
+.share-link input{flex:1;border:none;background:none;outline:none;font-family:var(--mono);font-size:12.5px;color:var(--ink-soft)}
+.share-link button{height:34px;padding:0 14px;border-radius:9px;background:var(--accent);color:#fff;font-weight:700;font-size:12.5px}
+.share-opts{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
+.share-opt{display:flex;align-items:center;gap:12px;padding:13px 14px;border:1px solid var(--line);border-radius:13px}
+.share-opt .ic{width:34px;height:34px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+.share-opt .ic svg{width:18px;height:18px}
+.share-opt .tt{font-weight:700;font-size:13.5px}
+.share-opt .dd{font-size:12px;color:var(--ink-soft);margin-top:1px}
+.modal-actions{display:flex;gap:10px}
+.modal-actions button{flex:1;height:46px;border-radius:13px;font-weight:700;font-size:14px;transition:.13s}
+.btn-ghost{background:var(--panel-2);color:var(--ink-soft);border:1px solid var(--line)}
+.btn-ghost:hover{background:var(--line)}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 14px -4px var(--accent)}
+.btn-primary:hover{background:var(--accent-press)}
+.modal .close{position:absolute;top:18px;right:18px;width:32px;height:32px;border-radius:9px;
+  display:grid;place-items:center;color:var(--ink-faint)}
+.modal .close:hover{background:var(--panel-2);color:var(--ink)}
+
+/* ---------- Context menu ---------- */
+.ctx{position:absolute;z-index:60;min-width:178px;padding:6px;border-radius:13px;display:none}
+.ctx.open{display:block}
+.ctx button{display:flex;align-items:center;gap:10px;width:100%;height:34px;padding:0 10px;border-radius:8px;
+  font-size:13px;font-weight:600;color:var(--ink);text-align:left}
+.ctx button:hover{background:var(--accent-soft);color:var(--accent)}
+.ctx button svg{width:15px;height:15px;color:var(--ink-faint)}
+.ctx button:hover svg{color:var(--accent)}
+.ctx button.danger:hover{background:#fdecec;color:#d6383e}
+.ctx button.danger:hover svg{color:#d6383e}
+.ctx .sep{height:1px;background:var(--line);margin:5px 6px}
+.ctx button .k{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)}
+
+/* ============ THEME VARIATIONS ============ */
+/* Variation 2: "Suave" — soft pill, more rounded, lighter */
+body.theme-soft{--bg:#f6f6f4;--accent:#2A6FDB;--radius:16px;--radius-lg:26px;--shadow:0 8px 30px -8px rgba(30,30,40,.16);--tool:44px}
+body.theme-soft .toolbar{border-radius:24px;padding:8px;gap:5px}
+body.theme-soft .tool{border-radius:14px}
+body.theme-soft .panel{border-radius:26px}
+body.theme-soft .brand .mark{border-radius:12px}
+
+/* Variation 3: "Pro" — dark chrome, compact, denser */
+body.theme-pro{--bg:#eceef2;--panel:#1b1f29;--panel-2:#252a36;--ink:#f1f3f7;--ink-soft:#a4adbe;
+  --ink-faint:#6b7488;--line:#2f3542;--line-strong:#3a4150;--radius:11px;--radius-lg:15px;--tool:40px;
+  --shadow:0 10px 34px -10px rgba(8,12,22,.55)}
+body.theme-pro .tool svg{stroke-width:1.8px}
+body.theme-pro .brand .name{color:#fff}
+body.theme-pro .seg button.active,body.theme-pro .tool.active{color:#fff}
+body.theme-pro .sw{box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}

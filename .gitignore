@@ -1,0 +1,14 @@
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Trabajo interno (no subir)
+screenshots/
+uploads/
+.cache/
+node_modules/
+
+# Logs
+*.log
