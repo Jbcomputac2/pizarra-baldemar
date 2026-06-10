@@ -16,6 +16,19 @@ function initUI() {
   updateZoomLabel();
   refreshBrand();
   lucide.createIcons();
+  maybeEnterViewerFromUrl();
+}
+
+/* If URL has #aula=ID&vista=vivo, switch to that board and enter read-only viewer */
+function maybeEnterViewerFromUrl() {
+  const hash = location.hash || '';
+  if (!hash.includes('vista=vivo')) return;
+  const m = hash.match(/aula=([^&]+)/);
+  if (m) {
+    const b = WS.boards.find(x => x.id === m[1]);
+    if (b) { WS.currentBoardId = b.id; WS.currentWsId = b.wsId; applyBoard(b); refreshBrand(); }
+  }
+  setTimeout(enterViewer, 200);
 }
 
 /* ---------- sidebar ---------- */
@@ -361,6 +374,23 @@ function updateProps() {
     g.appendChild(wrap); el.appendChild(g);
   }
 
+  // tamaño de letra para texto y notas (small/medium/large/xlarge)
+  if (single && (single.type === 'text' || single.type === 'sticky')) {
+    sep();
+    const g = document.createElement('div'); g.className = 'grp';
+    g.innerHTML = `<div class="lbl">Tamaño</div>`;
+    const wrap = document.createElement('div'); wrap.className = 'sizes';
+    const TFS = single.type === 'sticky' ? [14, 18, 24, 32] : [20, 28, 42, 60];
+    const curFs = single.fs || (single.type === 'sticky' ? 18 : 28);
+    TFS.forEach((v, i) => {
+      const dd = document.createElement('button'); dd.className = 'size-dot' + (curFs === v ? ' active' : '');
+      const px = 6 + i * 4; dd.style.width = px + 'px'; dd.style.height = px + 'px';
+      dd.onclick = () => { single.fs = v; commit(); updateProps(); };
+      wrap.appendChild(dd);
+    });
+    g.appendChild(wrap); el.appendChild(g);
+  }
+
   // letra (inner text of a shape): own size + color
   const innerTextTypes = ['rect', 'ellipse', 'diamond', 'triangle', 'line', 'arrow'];
   if (single && innerTextTypes.includes(single.type) && single.text) {
@@ -490,7 +520,9 @@ function wireShare() {
   document.getElementById('startPresent').onclick = () => { closeShare(); enterViewer(); };
 }
 function openShare() {
-  document.getElementById('shareUrl').value = 'https://baldemar.tu-dominio.com/p/aula-3f9a2c#solo-lectura';
+  const board = currentBoard();
+  // hash-based: keeps the app at root path so relative assets load
+  document.getElementById('shareUrl').value = `${location.origin}/#aula=${board.id}&vista=vivo`;
   document.getElementById('shareModal').classList.add('on');
 }
 function closeShare() { document.getElementById('shareModal').classList.remove('on'); }
