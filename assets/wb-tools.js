@@ -299,12 +299,14 @@ function placeShapeText(shape) {
   if (isLine) { cxw = (shape.x1 + shape.x2) / 2; cyw = (shape.y1 + shape.y2) / 2; ww = 160; hh = fs * 1.4; }
   else { cxw = shape.x + shape.w / 2; cyw = shape.y + shape.h / 2; ww = shape.w - 24; hh = shape.h - 24; }
   const sc = toScreen(cxw - ww / 2, cyw - hh / 2);
+  const innerFont = shape.textFont || WB.font;
   Object.assign(ta.style, {
     left: sc.x + 'px', top: sc.y + 'px',
     width: ww * WB.cam.z + 'px', height: hh * WB.cam.z + 'px',
     fontSize: fs * WB.cam.z + 'px', lineHeight: '1.3',
-    color: shape.textColor || '#1d2128', fontWeight: 600,
-    fontFamily: `'${WB.font}', 'Poppins', sans-serif`,
+    color: shape.textColor || '#1d2128',
+    fontWeight: shape.textBold ? 800 : 600, fontStyle: shape.textItalic ? 'italic' : 'normal',
+    fontFamily: `'${innerFont}', 'Poppins', sans-serif`,
     textAlign: shape.align || 'center', padding: '0',
     background: 'transparent', border: 'none', resize: 'none', overflow: 'hidden',
     display: 'flex', alignItems: 'center'
@@ -316,6 +318,7 @@ function placeShapeText(shape) {
     shape.text = ta.value.trim();
     if (!shape.textFs) shape.textFs = fs;
     if (!shape.textColor) shape.textColor = '#1d2128';
+    if (!shape.textFont) shape.textFont = innerFont;
     delete shape._editing;
     commit(); ta.remove();
   };

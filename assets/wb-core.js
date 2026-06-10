@@ -218,7 +218,7 @@ function drawShapeText(ctx, s) {
   if (!s.text || s._editing) return;
   const padding = 12;
   const fs = s.textFs || 24;
-  drawCenteredText(ctx, s.text, s.x + s.w / 2, s.y + s.h / 2, Math.max(20, s.w - padding * 2), fs, s.textColor || '#1d2128', s.align || 'center');
+  drawCenteredText(ctx, s.text, s.x + s.w / 2, s.y + s.h / 2, Math.max(20, s.w - padding * 2), fs, s.textColor || '#1d2128', s.align || 'center', { font: s.textFont, bold: s.textBold, italic: s.textItalic });
 }
 
 /* draw text along a line/arrow at midpoint */
@@ -228,7 +228,7 @@ function drawLineText(ctx, s) {
   const angle = Math.atan2(s.y2 - s.y1, s.x2 - s.x1);
   const fs = s.textFs || 18;
   ctx.save(); ctx.translate(mx, my); ctx.rotate(Math.abs(angle) > Math.PI / 2 ? angle + Math.PI : angle);
-  ctx.font = fontStr(fs, 700);
+  ctx.font = innerFontStr(fs, { font: s.textFont, bold: true });
   const tw = ctx.measureText(s.text).width;
   ctx.fillStyle = WB.theme === 'pro' ? '#1b1f29' : '#ffffff';
   ctx.fillRect(-tw / 2 - 5, -fs / 2 - 2, tw + 10, fs + 4);
@@ -237,10 +237,19 @@ function drawLineText(ctx, s) {
   ctx.restore();
 }
 
+/* font string for shape inner text honoring its own font/bold/italic */
+function innerFontStr(fs, o) {
+  o = o || {};
+  const fam = o.font || WB.font;
+  const weight = o.bold ? 800 : 600;
+  const style = o.italic ? 'italic ' : '';
+  return `${style}${weight} ${fs}px '${fam}', 'Poppins', system-ui, sans-serif`;
+}
+
 /* centered, wrapped text helper */
-function drawCenteredText(ctx, text, cx, cy, maxW, fs, color, align) {
+function drawCenteredText(ctx, text, cx, cy, maxW, fs, color, align, fontOpts) {
   if (!text) return;
-  ctx.fillStyle = color; ctx.font = fontStr(fs);
+  ctx.fillStyle = color; ctx.font = innerFontStr(fs, fontOpts);
   ctx.textBaseline = 'middle'; ctx.textAlign = align;
   const paras = String(text).split('\n');
   const lines = [];

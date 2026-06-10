@@ -225,10 +225,11 @@ function buildFonts() {
 }
 function closeFontPop() { document.getElementById('fontPop').classList.remove('open'); }
 function setFont(name) {
-  // If a text shape is selected, change ONLY that text's font; otherwise set default for new text
   const sel = WB.sel && WB.sel.length === 1 ? WB.sel[0] : null;
-  if (sel && (sel.type === 'text' || sel.type === 'sticky' || sel.text !== undefined)) {
+  if (sel && (sel.type === 'text')) {
     sel.font = name; commit();
+  } else if (sel && ['rect', 'ellipse', 'diamond', 'triangle', 'line', 'arrow', 'sticky'].includes(sel.type) && sel.text) {
+    sel.textFont = name; commit();        // inner text of a figure
   } else {
     WB.font = name; save();
   }
@@ -504,6 +505,18 @@ function updateProps() {
       sws.appendChild(s);
     });
     g.appendChild(sws);
+    // negrita / cursiva para la letra interna
+    const frow = document.createElement('div'); frow.className = 'fmt-row'; frow.style.marginTop = '8px';
+    const mkf = (key, label, css) => {
+      const b = document.createElement('button');
+      b.className = 'fmt-btn' + (single[key] ? ' active' : '');
+      b.innerHTML = `<span style="${css}">${label}</span>`;
+      b.onclick = () => { single[key] = !single[key]; commit(); updateProps(); };
+      return b;
+    };
+    frow.appendChild(mkf('textBold', 'B', 'font-weight:800'));
+    frow.appendChild(mkf('textItalic', 'I', 'font-style:italic;font-weight:600'));
+    g.appendChild(frow);
     el.appendChild(g);
   }
 
