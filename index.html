@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Pizarra — Prof. Baldemar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/wb.css?v=20260609b">
+</head>
+<body>
+<div id="app">
+  <canvas id="board"></canvas>
+
+  <!-- Brand / sidebar trigger -->
+  <div class="brand panel" id="brand">
+    <div class="mark"><i data-lucide="presentation"></i></div>
+    <div class="col">
+      <div class="name" id="brandName">Mi primera pizarra</div>
+      <div class="sub" id="brandSub">Prof. Baldemar</div>
+    </div>
+    <i data-lucide="chevron-down" class="chev"></i>
+  </div>
+
+  <!-- Workspaces sidebar -->
+  <div class="sidebar panel" id="sidebar">
+    <div class="sb-head">
+      <span class="lbl">Espacios y pizarras</span>
+      <button id="closeSb" title="Cerrar"><i data-lucide="x"></i></button>
+    </div>
+    <div class="sb-body" id="sbBody"></div>
+  </div>
+
+  <!-- Top-right -->
+  <div class="topright">
+    <div class="seg panel" id="bgSeg" title="Fondo">
+      <button data-bg="dots"><i data-lucide="grip"></i></button>
+      <button data-bg="grid"><i data-lucide="grid-3x3"></i></button>
+      <button data-bg="lines"><i data-lucide="align-justify"></i></button>
+      <button data-bg="blank"><i data-lucide="square"></i></button>
+    </div>
+    <div class="seg panel" id="themeSeg" title="Estilo">
+      <button data-theme="default" class="active">Clásico</button>
+      <button data-theme="soft">Suave</button>
+      <button data-theme="pro">Pro</button>
+    </div>
+    <div style="position:relative">
+      <button class="font-btn panel" id="fontBtn" title="Tipografía">
+        <span class="aa">Aa</span><span class="cur" id="fontCur">Montserrat</span><i data-lucide="chevron-down"></i>
+      </button>
+      <div class="font-pop panel" id="fontPop"></div>
+    </div>
+    <button class="btn-present" id="presentBtn">
+      <span class="live-dot"></span> Compartir en vivo
+    </button>
+  </div>
+
+  <!-- Properties (left) -->
+  <div class="props panel" id="props"></div>
+
+  <!-- Bottom toolbar -->
+  <div class="toolbar-wrap">
+    <div class="popover panel" id="shapesPopover"></div>
+    <div class="toolbar panel" id="toolbar"></div>
+  </div>
+
+  <!-- Zoom -->
+  <div class="zoom panel" id="zoom">
+    <button id="zoomOut" title="Alejar"><i data-lucide="minus"></i></button>
+    <div class="pct" id="zoomPct">100%</div>
+    <button id="zoomIn" title="Acercar"><i data-lucide="plus"></i></button>
+    <button id="zoomFit" title="Ajustar contenido"><i data-lucide="maximize"></i></button>
+  </div>
+
+  <input type="file" id="imgInput" accept="image/*" style="display:none">
+
+  <!-- Context menu -->
+  <div class="ctx panel" id="ctxMenu">
+    <button data-act="edit"><i data-lucide="pencil"></i> Editar texto</button>
+    <button data-act="duplicate"><i data-lucide="copy"></i> Duplicar <span class="k">⌘D</span></button>
+    <button data-act="front"><i data-lucide="bring-to-front"></i> Traer al frente</button>
+    <button data-act="back"><i data-lucide="send-to-back"></i> Enviar al fondo</button>
+    <div class="sep"></div>
+    <button data-act="delete" class="danger"><i data-lucide="trash-2"></i> Eliminar <span class="k">Supr</span></button>
+  </div>
+</div>
+
+<!-- ================= VIEWER (solo lectura) ================= -->
+<div id="viewer">
+  <canvas id="viewerCanvas"></canvas>
+  <div class="live-badge">
+    <span class="rec"></span>
+    <span class="t">EN VIVO</span>
+    <span class="by">Prof. Baldemar está explicando</span>
+  </div>
+  <button class="viewer-exit" id="exitViewer"><i data-lucide="x"></i> Salir de la vista</button>
+  <div class="pcursor" id="pcursor">
+    <svg viewBox="0 0 24 24" fill="#2A6FDB"><path d="M5.5 3.5l13 7.5-5.4 1.2-2.3 5.3z"/></svg>
+    <span class="tag">Prof. Baldemar</span>
+  </div>
+  <div class="viewer-hint">
+    <span><span class="kbd">Arrastra</span>mover</span>
+    <span class="dot"></span>
+    <span><span class="kbd">⌘ + scroll</span>zoom</span>
+    <span class="dot"></span>
+    <span>Solo lectura — verás todo lo que dibuje en tiempo real</span>
+  </div>
+</div>
+
+<!-- ================= SHARE MODAL ================= -->
+<div class="modal-bg" id="shareModal">
+  <div class="modal panel" style="position:relative">
+    <button class="close" id="shareClose"><i data-lucide="x"></i></button>
+    <h2>Compartir en vivo</h2>
+    <p class="sub">Comparte este enlace. Quien lo abra verá tu pizarra y todo lo que dibujes en tiempo real — solo podrá mover y hacer zoom, nada más.</p>
+    <div class="share-link">
+      <input id="shareUrl" readonly value="">
+      <button id="copyLink">Copiar</button>
+    </div>
+    <div class="share-opts">
+      <div class="share-opt">
+        <div class="ic"><i data-lucide="eye"></i></div>
+        <div><div class="tt">Solo lectura</div><div class="dd">Los espectadores no pueden editar ni mover tus elementos</div></div>
+      </div>
+      <div class="share-opt">
+        <div class="ic"><i data-lucide="radio"></i></div>
+        <div><div class="tt">Sincronización en tiempo real</div><div class="dd">Tu cursor y cada trazo aparecen al instante</div></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="shareCancel">Cerrar</button>
+      <button class="btn-primary" id="startPresent"><i data-lucide="play" style="width:15px;height:15px;vertical-align:-2px"></i> Ver como espectador</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="assets/wb-core.js?v=20260609b"></script>
+<script src="assets/wb-tools.js?v=20260609b"></script>
+<script src="assets/wb-ui.js?v=20260609b"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    initCore();
+    initTools();
+    initUI();
+    wireDblClick();
+  });
+</script>
+</body>
+</html>
