@@ -20,15 +20,28 @@ function initUI() {
 }
 
 /* If URL has #aula=ID&vista=vivo, switch to that board and enter read-only viewer */
-function maybeEnterViewerFromUrl() {
+async function maybeEnterViewerFromUrl() {
   const hash = location.hash || '';
   if (!hash.includes('vista=vivo')) return;
   const m = hash.match(/aula=([^&]+)/);
   if (m) {
-    const b = WS.boards.find(x => x.id === m[1]);
+    const id = m[1];
+    // try local first
+    let b = WS && WS.boards && WS.boards.find(x => x._dirId === id || x.id === id);
+    if (!b) {
+      // fetch from Directus directly
+      const row = await fetchOneBoard(id);
+      if (row) {
+        b = { id: row.id, _dirId: row.id, wsId: row.workspace || 'remote', name: row.name || 'Pizarra',
+              shapes: row.shapes || [], cam: row.cam || { x: W/2, y: H/2, z: 1 },
+              bg: (row.cam && row.cam._bg) || row.bg || 'dots' };
+        if (!WS) WS = freshWorkspace();
+        WS.boards.push(b);
+      }
+    }
     if (b) { WS.currentBoardId = b.id; WS.currentWsId = b.wsId; applyBoard(b); refreshBrand(); }
   }
-  setTimeout(enterViewer, 200);
+  setTimeout(enterViewer, 300);
 }
 
 /* ---------- sidebar ---------- */
@@ -521,9 +534,14 @@ function wireShare() {
 }
 function openShare() {
   const board = currentBoard();
-  // hash-based: keeps the app at root path so relative assets load
-  document.getElementById('shareUrl').value = `${location.origin}/#aula=${board.id}&vista=vivo`;
-  document.getElementById('shareModal').classList.add('on');
+  // Save first so the board has a Directus id, then build link
+  pushBoard(board).then(() => {
+    const id = board._dirId || board.id;
+    // 🍕 PRUEBA DE DEPLOY: mostramos "pizza" en vez de "pizarra"
+    const base = location.origin.replace('pizarra', 'pizza');
+    document.getElementById('shareUrl').value = `${base}/#aula=${id}&vista=vivo`;
+    document.getElementById('shareModal').classList.add('on');
+  });
 }
 function closeShare() { document.getElementById('shareModal').classList.remove('on'); }
 

@@ -537,7 +537,9 @@ function openShare() {
   // Save first so the board has a Directus id, then build link
   pushBoard(board).then(() => {
     const id = board._dirId || board.id;
-    document.getElementById('shareUrl').value = `${location.origin}/#aula=${id}&vista=vivo`;
+    // 🍕 PRUEBA DE DEPLOY: mostramos "pizza" en vez de "pizarra"
+    const base = location.origin.replace('pizarra', 'pizza');
+    document.getElementById('shareUrl').value = `${base}/#aula=${id}&vista=vivo`;
     document.getElementById('shareModal').classList.add('on');
   });
 }

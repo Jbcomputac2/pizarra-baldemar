@@ -453,20 +453,41 @@ async function pushBoard(b) {
     cam: Object.assign({}, b.cam || { x: 0, y: 0, z: 1 }, { _bg: b.bg || 'dots' }),
   };
   try {
+    let res;
     if (b._dirId) {
-      await fetch(`${DIRECTUS_URL}/items/boards/${b._dirId}`, {
+      res = await fetch(`${DIRECTUS_URL}/items/boards/${b._dirId}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
     } else {
-      const r = await fetch(`${DIRECTUS_URL}/items/boards`, {
+      res = await fetch(`${DIRECTUS_URL}/items/boards`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      const j = await r.json();
-      if (j && j.data && j.data.id) { b._dirId = j.data.id; }
     }
-  } catch (e) { /* offline → localStorage is still authoritative */ }
+    if (res && res.ok) {
+      const j = await res.json().catch(() => null);
+      if (j && j.data && j.data.id && !b._dirId) b._dirId = j.data.id;
+      syncToast('Guardado en tu servidor ✓', 'ok');
+    } else if (res) {
+      const txt = await res.text().catch(() => '');
+      let msg = txt;
+      try { const e = JSON.parse(txt); if (e.errors && e.errors[0]) msg = e.errors[0].message; } catch (x) {}
+      syncToast('No se pudo guardar (' + res.status + '): ' + msg, 'err');
+    }
+  } catch (e) {
+    syncToast('Sin conexión con el servidor — guardado solo en este equipo', 'err');
+  }
+}
+
+let _toastT = null;
+function syncToast(msg, kind) {
+  const el = document.getElementById('syncToast');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'show ' + (kind || 'ok');
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => { el.className = (kind || 'ok'); }, kind === 'err' ? 9000 : 1800);
 }
 
 async function fetchAllBoards() {
