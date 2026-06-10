@@ -441,22 +441,102 @@ function todayLabel() {
   return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+/* ===== Directus (servidor) ===== */
+const DIRECTUS_URL = 'https://directus.jbs.red';
+
+async function pushBoard(b) {
+  const payload = {
+    name: b.name || 'Sin título',
+    workspace: b.wsId || '',
+    shapes: b.shapes || [],
+    cam: b.cam || { x: 0, y: 0, z: 1 },
+    bg: b.bg || 'dots',
+  };
+  try {
+    if (b._dirId) {
+      await fetch(`${DIRECTUS_URL}/items/boards/${b._dirId}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      const r = await fetch(`${DIRECTUS_URL}/items/boards`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const j = await r.json();
+      if (j && j.data && j.data.id) { b._dirId = j.data.id; }
+    }
+  } catch (e) { /* offline → localStorage is still authoritative */ }
+}
+
+async function fetchAllBoards() {
+  try {
+    const r = await fetch(`${DIRECTUS_URL}/items/boards?limit=-1&fields=id,name,workspace,shapes,cam,bg,date_created,date_updated`);
+    if (!r.ok) return null;
+    const j = await r.json();
+    return (j && j.data) || null;
+  } catch (e) { return null; }
+}
+
+async function fetchOneBoard(dirId) {
+  try {
+    const r = await fetch(`${DIRECTUS_URL}/items/boards/${dirId}?fields=id,name,workspace,shapes,cam,bg`);
+    if (!r.ok) return null;
+    const j = await r.json();
+    return (j && j.data) || null;
+  } catch (e) { return null; }
+}
+
+function buildWSFromDirectus(rows) {
+  const workspaces = []; const wsSeen = {}; const boards = [];
+  rows.forEach(d => {
+    const wsId = d.workspace || 'mi-taller';
+    if (!wsSeen[wsId]) {
+      wsSeen[wsId] = true;
+      // try to recover name from localStorage if available
+      let nm = 'Mi taller';
+      try {
+        const raw = localStorage.getItem(STORE_KEY); if (raw) {
+          const old = JSON.parse(raw); const w = (old.workspaces || []).find(x => x.id === wsId);
+          if (w) nm = w.name;
+        }
+      } catch (e) {}
+      workspaces.push({ id: wsId, name: nm });
+    }
+    boards.push({
+      id: d.id, _dirId: d.id, wsId, name: d.name || 'Sin título',
+      shapes: d.shapes || [], cam: d.cam || { x: W/2, y: H/2, z: 1 }, bg: d.bg || 'dots',
+      createdAt: d.date_created ? new Date(d.date_created).getTime() : Date.now(),
+      updatedAt: d.date_updated ? new Date(d.date_updated).getTime() : Date.now(),
+    });
+  });
+  if (!workspaces.length) { workspaces.push({ id: 'mi-taller', name: 'Mi taller' }); }
+  if (!boards.length) { boards.push({ id: uid(), wsId: workspaces[0].id, name: 'Mi primera pizarra', shapes: [], cam: { x: W/2, y: H/2, z: 1 }, bg: 'dots', createdAt: Date.now(), updatedAt: Date.now() }); }
+  return { workspaces, boards, currentWsId: workspaces[0].id, currentBoardId: boards[0].id, font: 'Montserrat', theme: 'default' };
+}
+
 function loadAll() {
+  let hadLocal = false;
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw) WS = JSON.parse(raw);
+    if (raw) { WS = JSON.parse(raw); hadLocal = true; }
   } catch (e) {}
-  if (!WS || !WS.workspaces) WS = freshWorkspace();
-  // legacy migration
-  try {
-    const old = localStorage.getItem(LEGACY_KEY);
-    if (old && !WS.boards.some(b => b._migrated)) {
-      const d = JSON.parse(old);
-      const b = WS.boards.find(x => x.id === WS.currentBoardId);
-      if (b && d.shapes && d.shapes.length) { b.shapes = d.shapes; b.cam = d.cam || b.cam; b.bg = d.bg || b.bg; b._migrated = true; }
-    }
-  } catch (e) {}
+  if (!WS) WS = freshWorkspace();
+  if (WS.font) WB.font = WS.font; if (WS.theme) WB.theme = WS.theme;
   applyBoard(currentBoard());
+
+  // First-time visitors: fetch from Directus to import existing boards
+  if (!hadLocal) {
+    fetchAllBoards().then(rows => {
+      if (rows && rows.length) {
+        WS = buildWSFromDirectus(rows);
+        try { localStorage.setItem(STORE_KEY, JSON.stringify(WS)); } catch (e) {}
+        applyBoard(currentBoard());
+        if (typeof refreshSidebar === 'function') refreshSidebar();
+        if (typeof refreshBrand === 'function') refreshBrand();
+      }
+    });
+  }
 }
 function freshWorkspace() {
   const wsId = uid(), bId = uid(), now = Date.now();
@@ -465,7 +545,6 @@ function freshWorkspace() {
     boards: [{ id: bId, wsId, name: 'Mi primera pizarra', createdAt: now, updatedAt: now, shapes: [], cam: { x: W/2, y: H/2, z: 1 }, bg: 'dots' }],
     currentWsId: wsId, currentBoardId: bId, font: 'Montserrat', theme: 'default',
   };
-  // seed demo content only on the very first board
   WB.shapes = []; seedDemo(ws.boards[0]);
   return ws;
 }
@@ -475,7 +554,6 @@ function applyBoard(b) {
   WB.shapes = b.shapes || [];
   WB.cam = b.cam || { x: W / 2, y: H / 2, z: 1 };
   WB.bg = b.bg || 'dots';
-  // NOTE: new boards start empty on purpose — no demo seed here
   WB.sel = []; lastState = snapshot();
   history.undo = []; history.redo = [];
 }
@@ -487,15 +565,11 @@ function save() {
     b.shapes = WB.shapes; b.cam = WB.cam; b.bg = WB.bg; b.updatedAt = Date.now();
     WS.font = WB.font; WS.theme = WB.theme;
     try { localStorage.setItem(STORE_KEY, JSON.stringify(WS)); } catch (e) {}
+    pushBoard(b);
     if (typeof refreshSidebar === 'function') refreshSidebar();
-    /* TODO Directus:
-       fetch(DIRECTUS_URL+'/items/boards/'+b.id, { method:'PATCH',
-         headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN},
-         body: JSON.stringify({ shapes: WB.shapes, cam: WB.cam, bg: WB.bg }) });
-    */
-  }, 400);
+  }, 500);
 }
 
-function load() { loadAll(); if (WS.font) WB.font = WS.font; if (WS.theme) WB.theme = WS.theme; }
+function load() { loadAll(); }
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
