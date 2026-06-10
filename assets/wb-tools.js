@@ -5,6 +5,7 @@ let spaceDown = false;
 function initTools() {
   cv.addEventListener('pointerdown', onDown);
   window.addEventListener('pointermove', onMove);
+  window.addEventListener('paste', onPaste);
   window.addEventListener('pointerup', onUp);
   cv.addEventListener('wheel', onWheel, { passive: false });
   window.addEventListener('keydown', onKey);
@@ -200,28 +201,36 @@ function drawLaser(ctx) {
 function placeText(w, existing) {
   const ta = document.createElement('textarea');
   ta.className = 'editor';
-  const fs = existing ? existing.fs : 28;
+  const fs = existing ? existing.fs : (WB._newFs || 28);
   const fixed = !!(existing && existing.w && !existing.auto);
   const align = (existing && existing.align) || WB.align;
+  const font = existing ? (existing.font || WB.font) : WB.font;
+  const bold = existing ? !!existing.bold : false;
+  const italic = existing ? !!existing.italic : false;
+  const underline = existing ? !!existing.underline : false;
+  const list = existing ? (existing.list || 'none') : 'none';
   const x = existing ? existing.x : w.x, y = existing ? existing.y : w.y;   // top-left, world
   const anchor = toScreen(x, y);
   const fontPx = fs * WB.cam.z;
   Object.assign(ta.style, {
     left: anchor.x + 'px', top: anchor.y + 'px',
     fontSize: fontPx + 'px', lineHeight: '1.3',
-    color: existing ? existing.color : WB.color, fontWeight: 600,
-    fontFamily: `'${WB.font}', 'Poppins', sans-serif`,
+    color: existing ? existing.color : WB.color,
+    fontWeight: bold ? 800 : 600, fontStyle: italic ? 'italic' : 'normal',
+    textDecoration: underline ? 'underline' : 'none',
+    fontFamily: `'${font}', 'Poppins', sans-serif`,
     whiteSpace: fixed ? 'pre-wrap' : 'pre',
     textAlign: align,
     padding: '0', border: 'none', boxSizing: 'content-box',
     background: 'transparent', resize: 'none', overflow: 'hidden'
   });
   ta.value = existing ? existing.text : '';
+  const mopts = { font, bold, italic };
   const grow = () => {
     ta.style.height = 'auto';
     if (fixed) { ta.style.width = existing.w * WB.cam.z + 'px'; }
     else {
-      const widest = Math.max(...(ta.value || ' ').split('\n').map(l => measureLine(l, fs)));
+      const widest = Math.max(...(ta.value || ' ').split('\n').map(l => measureLine(l, fs, mopts)));
       ta.style.width = Math.max(24, widest * WB.cam.z + 4) + 'px';
     }
     const lines = ta.value.split('\n').length;
@@ -233,9 +242,10 @@ function placeText(w, existing) {
   const finish = () => {
     const v = ta.value.replace(/\s+$/, '');
     if (v) {
-      const widest = Math.max(...ta.value.split('\n').map(l => measureLine(l, fs)), 10);
+      const widest = Math.max(...ta.value.split('\n').map(l => measureLine(l, fs, mopts)), 10);
       WB.shapes.push({ id: existing ? existing.id : uid(), type: 'text', x, y, text: ta.value,
         color: existing ? existing.color : WB.color, fs, align,
+        font, bold, italic, underline, list,
         w: fixed ? existing.w : widest, auto: !fixed });
     }
     commit(); ta.remove(); if (WB.tool !== 'select') setActiveTool('select');
@@ -244,8 +254,12 @@ function placeText(w, existing) {
   setTimeout(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); ta.addEventListener('blur', finish); }, 0);
 }
 
-function measureLine(line, fs) {
-  ctx.save(); ctx.font = fontStr(fs);
+function measureLine(line, fs, opts) {
+  opts = opts || {};
+  const fam = opts.font || WB.font;
+  const weight = opts.bold ? 800 : 600;
+  const style = opts.italic ? 'italic ' : '';
+  ctx.save(); ctx.font = `${style}${weight} ${fs}px '${fam}', 'Poppins', sans-serif`;
   const w = ctx.measureText(line || ' ').width; ctx.restore(); return w;
 }
 
@@ -310,6 +324,24 @@ function placeShapeText(shape) {
 }
 
 /* ---- image placement ---- */
+function onPaste(e) {
+  // Don't hijack paste while typing in a textarea/input
+  if (e.target && (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT')) return;
+  const items = (e.clipboardData && e.clipboardData.items) || [];
+  for (const it of items) {
+    if (it.type && it.type.indexOf('image') === 0) {
+      const file = it.getAsFile();
+      if (file) {
+        // place where the mouse is, else center
+        WB._pendingImgAt = WB._cursor || toWorld(W / 2, H / 2);
+        handleImageFile(file);
+        e.preventDefault();
+        return;
+      }
+    }
+  }
+}
+
 function handleImageFile(file) {
   const reader = new FileReader();
   reader.onload = () => {

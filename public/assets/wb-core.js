@@ -136,9 +136,20 @@ function drawShape(ctx, s) {
       const lines = layoutText(ctx, s);
       const align = s.align || 'left';
       ctx.textAlign = align;
+      ctx.font = fontStrFor(s, s.fs);
       const boxW = textBoxW(ctx, s, lines);
       const xA = align === 'center' ? s.x + boxW / 2 : align === 'right' ? s.x + boxW : s.x;
-      lines.forEach((ln, i) => ctx.fillText(ln, xA, s.y + i * s.fs * 1.3));
+      lines.forEach((ln, i) => {
+        const yy = s.y + i * s.fs * 1.3;
+        ctx.fillText(ln, xA, yy);
+        if (s.underline && ln) {
+          const lw = ctx.measureText(ln).width;
+          const ux = align === 'center' ? xA - lw / 2 : align === 'right' ? xA - lw : xA;
+          const uy = Math.round(yy + s.fs * 1.06) + 0.5;
+          ctx.strokeStyle = s.color; ctx.lineWidth = Math.max(1, s.fs * 0.06);
+          ctx.beginPath(); ctx.moveTo(ux, uy); ctx.lineTo(ux + lw, uy); ctx.stroke();
+        }
+      });
       break;
     }
     case 'sticky': {
@@ -294,21 +305,41 @@ function wrapText(ctx, text, x, y, maxW, lh) {
 
 function fontStr(fs, weight) { return `${weight || 600} ${fs}px '${WB.font}', 'Poppins', system-ui, sans-serif`; }
 
+/* font string honoring a text shape's own font + bold/italic */
+function fontStrFor(s, fs) {
+  const fam = s.font || WB.font;
+  const weight = s.bold ? 800 : 600;
+  const style = s.italic ? 'italic ' : '';
+  return `${style}${weight} ${fs}px '${fam}', 'Poppins', system-ui, sans-serif`;
+}
+
+/* paragraphs with list prefixes applied (display only) */
+function effectiveParas(s) {
+  const paras = String(s.text).split('\n');
+  if (!s.list || s.list === 'none') return paras;
+  let n = 0;
+  return paras.map(p => {
+    if (p.trim() === '') return p;
+    n++;
+    return (s.list === 'number' ? n + '.  ' : '•  ') + p;
+  });
+}
+
 /* lines to render for a text shape: auto-width (s.w falsy) splits on \n only;
    fixed-width (s.w set) wraps each paragraph within s.w */
 /* width of a text shape's box: fixed when s.w set & not auto; else hugs content */
 function textBoxW(ctx, s, lines) {
   lines = lines || layoutText(ctx, s);
   if (s.w && !s.auto) return s.w;
-  ctx.font = fontStr(s.fs);
+  ctx.font = fontStrFor(s, s.fs);
   return Math.max(...lines.map(l => ctx.measureText(l || ' ').width), 10);
 }
 
 /* lines to render for a text shape: auto (hug) splits on \n only;
    fixed-width wraps each paragraph within s.w */
 function layoutText(ctx, s) {
-  ctx.font = fontStr(s.fs);
-  const paras = String(s.text).split('\n');
+  ctx.font = fontStrFor(s, s.fs);
+  const paras = effectiveParas(s);
   if (!s.w || s.auto) return paras;
   const out = [];
   for (const para of paras) {

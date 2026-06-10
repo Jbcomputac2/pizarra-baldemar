@@ -23,6 +23,9 @@ function initUI() {
 async function maybeEnterViewerFromUrl() {
   const hash = location.hash || '';
   if (!hash.includes('vista=vivo')) return;
+  // apply shared theme so spectator sees the same look
+  const tm = hash.match(/tema=([^&]+)/);
+  if (tm && tm[1]) setTheme(tm[1]);
   const m = hash.match(/aula=([^&]+)/);
   if (m) {
     const id = m[1];
@@ -103,6 +106,16 @@ function refreshSidebar() {
   addWs.innerHTML = '<i data-lucide="folder-plus"></i> Nuevo espacio';
   addWs.onclick = newWorkspace;
   body.appendChild(addWs);
+
+  // exportar imagen
+  const expPng = document.createElement('button'); expPng.className = 'add-ws';
+  expPng.innerHTML = '<i data-lucide="image-down"></i> Exportar PNG';
+  expPng.onclick = () => exportImage('png');
+  body.appendChild(expPng);
+  const expJpg = document.createElement('button'); expJpg.className = 'add-ws';
+  expJpg.innerHTML = '<i data-lucide="image-down"></i> Exportar JPG';
+  expJpg.onclick = () => exportImage('jpg');
+  body.appendChild(expJpg);
 
   // cerrar sesión
   const out = document.createElement('button'); out.className = 'add-ws logout-btn';
@@ -196,6 +209,7 @@ const FONTS = [
   { name: 'Poppins', tag: 'Moderna · redondeada' },
   { name: 'Oswald', tag: 'Condensada · titulares' },
   { name: 'Bebas Neue', tag: 'Póster · alto impacto' },
+  { name: 'Times New Roman', tag: 'Clásica · con serifa' },
 ];
 function buildFonts() {
   const pop = document.getElementById('fontPop');
@@ -211,10 +225,15 @@ function buildFonts() {
 }
 function closeFontPop() { document.getElementById('fontPop').classList.remove('open'); }
 function setFont(name) {
-  WB.font = name; save();
+  // If a text shape is selected, change ONLY that text's font; otherwise set default for new text
+  const sel = WB.sel && WB.sel.length === 1 ? WB.sel[0] : null;
+  if (sel && (sel.type === 'text' || sel.type === 'sticky' || sel.text !== undefined)) {
+    sel.font = name; commit();
+  } else {
+    WB.font = name; save();
+  }
   document.getElementById('fontCur').textContent = name;
   const aa = document.querySelector('.font-btn .aa'); if (aa) aa.style.fontFamily = `'${name}',sans-serif`;
-  const bn = document.querySelector('.brand .name'); if (bn) bn.style.fontFamily = `'${name}',sans-serif`;
   document.querySelectorAll('#fontPop .fp').forEach(b => b.classList.toggle('active', b.dataset.font === name));
 }
 
@@ -414,15 +433,48 @@ function updateProps() {
     const g = document.createElement('div'); g.className = 'grp';
     g.innerHTML = `<div class="lbl">Tamaño</div>`;
     const wrap = document.createElement('div'); wrap.className = 'sizes';
-    const TFS = single.type === 'sticky' ? [14, 18, 24, 32] : [20, 28, 42, 60];
+    const TFS = single.type === 'sticky' ? [14, 18, 24, 32] : [12, 20, 28, 42, 60];
     const curFs = single.fs || (single.type === 'sticky' ? 18 : 28);
     TFS.forEach((v, i) => {
       const dd = document.createElement('button'); dd.className = 'size-dot' + (curFs === v ? ' active' : '');
-      const px = 6 + i * 4; dd.style.width = px + 'px'; dd.style.height = px + 'px';
+      const px = 6 + i * 3.4; dd.style.width = px + 'px'; dd.style.height = px + 'px';
+      dd.title = v + ' px';
       dd.onclick = () => { single.fs = v; commit(); updateProps(); };
       wrap.appendChild(dd);
     });
     g.appendChild(wrap); el.appendChild(g);
+  }
+
+  // formato de texto: negrita / cursiva / subrayado + listas (solo texto)
+  if (single && single.type === 'text') {
+    sep();
+    const g = document.createElement('div'); g.className = 'grp';
+    g.innerHTML = `<div class="lbl">Formato</div>`;
+    const row = document.createElement('div'); row.className = 'fmt-row';
+    const mk = (key, label, styleCss) => {
+      const b = document.createElement('button');
+      b.className = 'fmt-btn' + (single[key] ? ' active' : '');
+      b.innerHTML = `<span style="${styleCss}">${label}</span>`;
+      b.onclick = () => { single[key] = !single[key]; commit(); updateProps(); };
+      return b;
+    };
+    row.appendChild(mk('bold', 'B', 'font-weight:800'));
+    row.appendChild(mk('italic', 'I', 'font-style:italic;font-weight:600'));
+    row.appendChild(mk('underline', 'U', 'text-decoration:underline;font-weight:600'));
+    g.appendChild(row);
+    // lists
+    const row2 = document.createElement('div'); row2.className = 'fmt-row'; row2.style.marginTop = '6px';
+    const mkList = (val, icon) => {
+      const b = document.createElement('button');
+      b.className = 'fmt-btn' + ((single.list || 'none') === val ? ' active' : '');
+      b.innerHTML = `<i data-lucide="${icon}"></i>`;
+      b.onclick = () => { single.list = (single.list === val ? 'none' : val); commit(); updateProps(); };
+      return b;
+    };
+    row2.appendChild(mkList('bullet', 'list'));
+    row2.appendChild(mkList('number', 'list-ordered'));
+    g.appendChild(row2);
+    el.appendChild(g);
   }
 
   // letra (inner text of a shape): own size + color
@@ -553,12 +605,39 @@ function wireShare() {
   };
   document.getElementById('startPresent').onclick = () => { closeShare(); enterViewer(); };
 }
+/* ---------- export PNG / JPG ---------- */
+function exportImage(format) {
+  if (!WB.shapes.length) { alert('La pizarra está vacía.'); return; }
+  let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+  WB.shapes.forEach(s => { const b = getBounds(s); x1 = Math.min(x1, b.x); y1 = Math.min(y1, b.y); x2 = Math.max(x2, b.x + b.w); y2 = Math.max(y2, b.y + b.h); });
+  const pad = 48;
+  x1 -= pad; y1 -= pad; x2 += pad; y2 += pad;
+  const cw = x2 - x1, ch = y2 - y1;
+  const scale = Math.min(3, Math.max(1, 2400 / Math.max(cw, ch)));
+  const oc = document.createElement('canvas');
+  oc.width = Math.round(cw * scale); oc.height = Math.round(ch * scale);
+  const octx = oc.getContext('2d');
+  if (format === 'jpg' || WB.theme === 'pro') {
+    octx.fillStyle = WB.theme === 'pro' ? '#1b1f29' : '#ffffff';
+    octx.fillRect(0, 0, oc.width, oc.height);
+  }
+  octx.setTransform(scale, 0, 0, scale, -x1 * scale, -y1 * scale);
+  const prev = ctx; ctx = octx;                 // drawShape measures with module ctx
+  try { WB.shapes.forEach(s => drawShape(octx, s)); } finally { ctx = prev; }
+  const mime = format === 'jpg' ? 'image/jpeg' : 'image/png';
+  const data = oc.toDataURL(mime, 0.92);
+  const a = document.createElement('a');
+  const bn = (currentBoard().name || 'pizarra').replace(/[^\w\-]+/g, '_');
+  a.download = `${bn}.${format}`; a.href = data; a.click();
+  closeSidebar();
+}
+
 function openShare() {
   const board = currentBoard();
   // Save first so the board has a Directus id, then build link
   pushBoard(board).then(() => {
     const id = board._dirId || board.id;
-    document.getElementById('shareUrl').value = `${location.origin}/#aula=${id}&vista=vivo`;
+    document.getElementById('shareUrl').value = `${location.origin}/#aula=${id}&vista=vivo&tema=${WB.theme || 'default'}`;
     document.getElementById('shareModal').classList.add('on');
   });
 }
