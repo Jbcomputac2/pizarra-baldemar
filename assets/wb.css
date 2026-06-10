@@ -258,6 +258,8 @@ canvas#board{position:absolute;inset:0;display:block;touch-action:none}
   transition:.14s;box-shadow:0 6px 16px -4px var(--accent)}
 #loginBtn:hover{background:var(--accent-press)}
 #loginBtn:disabled{opacity:.6;cursor:default}
+.logout-btn{color:#d6383e !important;margin-top:6px}
+.logout-btn:hover{background:#fdecec !important}
 
 /* ---------- Toast / hint ---------- */
 #syncToast{position:absolute;bottom:74px;left:50%;transform:translateX(-50%) translateY(8px);z-index:35;

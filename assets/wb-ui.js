@@ -103,6 +103,13 @@ function refreshSidebar() {
   addWs.innerHTML = '<i data-lucide="folder-plus"></i> Nuevo espacio';
   addWs.onclick = newWorkspace;
   body.appendChild(addWs);
+
+  // cerrar sesión
+  const out = document.createElement('button'); out.className = 'add-ws logout-btn';
+  out.innerHTML = '<i data-lucide="log-out"></i> Cerrar sesión';
+  out.onclick = () => { if (confirm('¿Cerrar sesión?')) logout(); };
+  body.appendChild(out);
+
   if (window.lucide) lucide.createIcons({ nodes: body.querySelectorAll('i') });
 }
 
@@ -571,6 +578,9 @@ function enterViewer() {
   bindViewerNav();
   // hide the fake presenter cursor
   const pc = document.getElementById('pcursor'); if (pc) pc.style.display = 'none';
+  // El espectador (abrió con enlace) NO puede salir al editor; solo el profesor que previsualiza.
+  const exitBtn = document.getElementById('exitViewer');
+  if (exitBtn) exitBtn.style.display = (typeof IS_SPECTATOR !== 'undefined' && IS_SPECTATOR) ? 'none' : '';
   startLivePolling();   // re-read board from server so viewers see real drawings
   viewerLoop();
 }

@@ -445,6 +445,65 @@ function todayLabel() {
 /* ===== Directus (servidor) ===== */
 const DIRECTUS_URL = 'https://directus.jbs.red';
 
+/* ---- Auth (solo el profesor puede editar) ---- */
+let AUTH = { token: null, refresh: null, email: null };
+let IS_SPECTATOR = false;   // true cuando se abre con #vista=vivo
+
+function loadAuth() {
+  try { const t = localStorage.getItem('pb.auth'); if (t) AUTH = JSON.parse(t); } catch (e) {}
+}
+function isLoggedIn() { return !!(AUTH && AUTH.token); }
+
+async function doLogin(email, password) {
+  try {
+    const r = await fetch(`${DIRECTUS_URL}/auth/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const j = await r.json();
+    if (j && j.data && j.data.access_token) {
+      AUTH = { token: j.data.access_token, refresh: j.data.refresh_token, email };
+      localStorage.setItem('pb.auth', JSON.stringify(AUTH));
+      return { ok: true };
+    }
+    let msg = 'Correo o contraseña incorrectos';
+    if (j && j.errors && j.errors[0]) msg = j.errors[0].message;
+    return { ok: false, msg };
+  } catch (e) { return { ok: false, msg: 'No hay conexión con el servidor' }; }
+}
+async function refreshToken() {
+  if (!AUTH || !AUTH.refresh) return false;
+  try {
+    const r = await fetch(`${DIRECTUS_URL}/auth/refresh`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: AUTH.refresh })
+    });
+    const j = await r.json();
+    if (j && j.data && j.data.access_token) {
+      AUTH.token = j.data.access_token; AUTH.refresh = j.data.refresh_token;
+      localStorage.setItem('pb.auth', JSON.stringify(AUTH));
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+function logout() { AUTH = { token: null }; localStorage.removeItem('pb.auth'); location.reload(); }
+
+/* fetch con token; reintenta una vez si expiró */
+async function authedFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = Object.assign({}, opts.headers || {});
+  if (AUTH && AUTH.token) opts.headers['Authorization'] = 'Bearer ' + AUTH.token;
+  let r = await fetch(url, opts);
+  if (r.status === 401 && AUTH && AUTH.refresh) {
+    if (await refreshToken()) {
+      opts.headers['Authorization'] = 'Bearer ' + AUTH.token;
+      r = await fetch(url, opts);
+    }
+  }
+  return r;
+}
+
 async function pushBoard(b) {
   // Only use JSON columns (shapes, cam) — the string columns (name/workspace)
   // have a broken length constraint in this Directus instance, so we fold
@@ -462,12 +521,12 @@ async function pushBoard(b) {
   try {
     let res;
     if (b._dirId) {
-      res = await fetch(`${DIRECTUS_URL}/items/boards/${b._dirId}`, {
+      res = await authedFetch(`${DIRECTUS_URL}/items/boards/${b._dirId}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
     } else {
-      res = await fetch(`${DIRECTUS_URL}/items/boards`, {
+      res = await authedFetch(`${DIRECTUS_URL}/items/boards`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
@@ -518,7 +577,7 @@ async function fetchOneBoard(dirId) {
 /* Delete a board from Directus */
 async function deleteBoardFromDirectus(dirId) {
   if (!dirId) return;
-  try { await fetch(`${DIRECTUS_URL}/items/boards/${dirId}`, { method: 'DELETE' }); }
+  try { await authedFetch(`${DIRECTUS_URL}/items/boards/${dirId}`, { method: 'DELETE' }); }
   catch (e) {}
 }
 
