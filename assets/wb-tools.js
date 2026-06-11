@@ -221,8 +221,11 @@ function placeText(w, existing) {
     fontFamily: `'${font}', 'Poppins', sans-serif`,
     whiteSpace: fixed ? 'pre-wrap' : 'pre',
     textAlign: align,
-    padding: '0', border: 'none', boxSizing: 'content-box',
-    background: 'transparent', resize: 'none', overflow: 'hidden'
+    padding: (4 * WB.cam.z) + 'px', margin: (-4 * WB.cam.z) + 'px', border: 'none', boxSizing: 'content-box',
+    background: 'rgba(42,111,219,0.06)', borderRadius: (5 * WB.cam.z) + 'px',
+    outline: '1.5px solid rgba(42,111,219,0.45)',
+    caretColor: 'var(--accent)',
+    resize: 'none', overflow: 'hidden'
   });
   ta.value = existing ? existing.text : '';
   const mopts = { font, bold, italic };
@@ -231,7 +234,7 @@ function placeText(w, existing) {
     if (fixed) { ta.style.width = existing.w * WB.cam.z + 'px'; }
     else {
       const widest = Math.max(...(ta.value || ' ').split('\n').map(l => measureLine(l, fs, mopts)));
-      ta.style.width = Math.max(24, widest * WB.cam.z + 4) + 'px';
+      ta.style.width = Math.max(24, widest * WB.cam.z + 8) + 'px';   // colchón para que no recorte
     }
     const lines = ta.value.split('\n').length;
     ta.style.height = Math.max(fontPx * 1.3 * lines, fontPx * 1.3) + 'px';
@@ -267,22 +270,33 @@ function placeSticky(w, existing) {
   const sw = existing ? existing.w : 190, sh = existing ? existing.h : 190;
   const color = existing ? existing.color : (WB._stickyColor || '#ffd43b');
   const x = existing ? existing.x : w.x, y = existing ? existing.y : w.y;
+  const font = existing ? (existing.font || WB.font) : WB.font;
+  const bold = existing ? !!existing.bold : false;
+  const italic = existing ? !!existing.italic : false;
+  const underline = existing ? !!existing.underline : false;
+  const fillStyle = existing ? (existing.fillStyle || 'solid') : (WB._stickyFill || 'solid');
+  const textColor = existing ? (existing.textColor || '#2a2a25') : '#2a2a25';
+  const fs = existing ? (existing.fs || 18) : 18;
+  const align = (existing && existing.align) || 'center';
   const sc = toScreen(x, y);
   const ta = document.createElement('textarea');
   ta.className = 'editor sticky-editor';
   Object.assign(ta.style, {
     left: sc.x + 'px', top: sc.y + 'px',
     width: sw * WB.cam.z + 'px', height: sh * WB.cam.z + 'px',
-    fontSize: 18 * WB.cam.z + 'px', background: color, color: '#2a2a25', fontWeight: 600,
-    fontFamily: `'${WB.font}', 'Poppins', sans-serif`,
-    display: 'flex', textAlign: (existing && existing.align) || 'center',
+    fontSize: fs * WB.cam.z + 'px', background: color, color: textColor,
+    fontWeight: bold ? 800 : 600, fontStyle: italic ? 'italic' : 'normal',
+    textDecoration: underline ? 'underline' : 'none',
+    fontFamily: `'${font}', 'Poppins', sans-serif`,
+    display: 'flex', textAlign: align,
     padding: '14px', boxSizing: 'border-box'
   });
   ta.value = existing ? existing.text : '';
   if (existing) WB.shapes = WB.shapes.filter(s => s !== existing);
   document.body.appendChild(ta);
   const finish = () => {
-    WB.shapes.push({ id: existing ? existing.id : uid(), type: 'sticky', x, y, w: sw, h: sh, text: ta.value, color, fs: 18, align: (existing && existing.align) || 'center' });
+    WB.shapes.push({ id: existing ? existing.id : uid(), type: 'sticky', x, y, w: sw, h: sh, text: ta.value, color,
+      fs, align, font, bold, italic, underline, fillStyle, textColor });
     commit(); ta.remove(); if (WB.tool !== 'select') setActiveTool('select');
   };
   ta.addEventListener('keydown', e => { if (e.key === 'Escape') ta.blur(); e.stopPropagation(); });
@@ -366,7 +380,8 @@ function handleImageFile(file) {
 function onWheel(e) {
   e.preventDefault();
   if (e.ctrlKey || e.metaKey) {
-    const factor = Math.exp(-e.deltaY * 0.01);
+    // factor suave: con poquito scroll el zoom no se dispara
+    const factor = Math.exp(-e.deltaY * 0.0035);
     zoomAt(e.clientX, e.clientY, factor);
   } else {
     WB.cam.x -= e.deltaX; WB.cam.y -= e.deltaY;

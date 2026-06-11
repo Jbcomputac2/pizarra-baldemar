@@ -10,7 +10,7 @@ const WB = {
   size: 'm',                 // s | m | l | xl
   bg: 'dots',                // dots | grid | lines | blank
   theme: 'default',
-  font: 'Montserrat',
+  font: 'Times New Roman',
   sel: [],
   marquee: null,
   imageCache: {},
@@ -28,6 +28,14 @@ const STICKY_COLORS = [
 const _patterns = {};
 
 let cv, ctx, DPR = 1, W = 0, H = 0;
+
+/* fallback measuring context so text helpers never crash if called pre-init */
+let _measCtx = null;
+function measCtx() {
+  if (ctx) return ctx;
+  if (!_measCtx) { try { _measCtx = document.createElement('canvas').getContext('2d'); } catch (e) {} }
+  return _measCtx;
+}
 
 function initCore() {
   cv = document.getElementById('board');
@@ -155,7 +163,18 @@ function drawShape(ctx, s) {
     case 'sticky': {
       ctx.save(); ctx.shadowColor = 'rgba(20,28,48,.18)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 5;
       ctx.fillStyle = s.color; roundRect(ctx, s.x, s.y, s.w, s.h, 5); ctx.fill(); ctx.restore();
-      drawCenteredText(ctx, s.text, s.x + s.w / 2, s.y + s.h / 2, s.w - 24, s.fs, '#2a2a25', s.align || 'center');
+      // patrón opcional (cuadrícula / rayado / puntos) sobre la nota
+      const fp = s.fillStyle;
+      if (fp && fp !== 'solid' && fp !== 'none') {
+        ctx.save(); roundRect(ctx, s.x, s.y, s.w, s.h, 5); ctx.clip();
+        const b = { x: s.x, y: s.y, w: s.w, h: s.h }; const pc = 'rgba(40,40,37,0.5)';
+        if (fp === 'hatch') drawHatch(ctx, b, pc, 45);
+        else if (fp === 'cross') { drawHatch(ctx, b, pc, 45); drawHatch(ctx, b, pc, -45); }
+        else if (fp === 'dots') drawDots(ctx, b, pc);
+        ctx.restore();
+      }
+      drawCenteredText(ctx, s.text, s.x + s.w / 2, s.y + s.h / 2, s.w - 24, s.fs, s.textColor || '#2a2a25', s.align || 'center',
+        { font: s.font, bold: s.bold, italic: s.italic, underline: s.underline });
       break;
     }
     case 'image': {
@@ -267,6 +286,17 @@ function drawCenteredText(ctx, text, cx, cy, maxW, fs, color, align, fontOpts) {
   const y0 = cy - total / 2 + lh / 2;
   const xA = align === 'left' ? cx - maxW / 2 : align === 'right' ? cx + maxW / 2 : cx;
   lines.forEach((ln, i) => ctx.fillText(ln, xA, y0 + i * lh));
+  // subrayado
+  if (fontOpts && fontOpts.underline) {
+    ctx.strokeStyle = color; ctx.lineWidth = Math.max(1, fs * 0.06);
+    lines.forEach((ln, i) => {
+      if (!ln) return;
+      const w = ctx.measureText(ln).width;
+      const lx = align === 'left' ? xA : align === 'right' ? xA - w : xA - w / 2;
+      const ly = y0 + i * lh + fs * 0.42;
+      ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + w, ly); ctx.stroke();
+    });
+  }
 }
 
 function strokePath(ctx, pts, color, width) {
@@ -338,6 +368,7 @@ function effectiveParas(s) {
    fixed-width (s.w set) wraps each paragraph within s.w */
 /* width of a text shape's box: fixed when s.w set & not auto; else hugs content */
 function textBoxW(ctx, s, lines) {
+  ctx = ctx || measCtx();
   lines = lines || layoutText(ctx, s);
   if (s.w && !s.auto) return s.w;
   ctx.font = fontStrFor(s, s.fs);
@@ -347,6 +378,7 @@ function textBoxW(ctx, s, lines) {
 /* lines to render for a text shape: auto (hug) splits on \n only;
    fixed-width wraps each paragraph within s.w */
 function layoutText(ctx, s) {
+  ctx = ctx || measCtx();
   ctx.font = fontStrFor(s, s.fs);
   const paras = effectiveParas(s);
   if (!s.w || s.auto) return paras;
@@ -407,8 +439,9 @@ function getBounds(s) {
     case 'line': case 'arrow':
       return { x: Math.min(s.x1, s.x2), y: Math.min(s.y1, s.y2), w: Math.abs(s.x2 - s.x1), h: Math.abs(s.y2 - s.y1) };
     case 'text': {
-      const lines = layoutText(ctx, s);
-      const w = textBoxW(ctx, s, lines);
+      const mc = ctx || measCtx();
+      const lines = layoutText(mc, s);
+      const w = textBoxW(mc, s, lines);
       return { x: s.x, y: s.y, w, h: lines.length * s.fs * 1.3 };
     }
     default: return { x: s.x, y: s.y, w: s.w, h: s.h };
@@ -640,7 +673,7 @@ function buildWSFromDirectus(rows) {
   });
   if (!workspaces.length) { workspaces.push({ id: 'mi-taller', name: 'Mi taller' }); }
   if (!boards.length) { boards.push({ id: uid(), wsId: workspaces[0].id, name: 'Mi primera pizarra', shapes: [], cam: { x: W/2, y: H/2, z: 1 }, bg: 'dots', createdAt: Date.now(), updatedAt: Date.now() }); }
-  return { workspaces, boards, currentWsId: workspaces[0].id, currentBoardId: boards[0].id, font: 'Montserrat', theme: 'default' };
+  return { workspaces, boards, currentWsId: workspaces[0].id, currentBoardId: boards[0].id, font: 'Times New Roman', theme: 'default' };
 }
 
 function loadAll() {
@@ -678,7 +711,7 @@ function freshWorkspace() {
   const ws = {
     workspaces: [{ id: wsId, name: 'Mi taller' }],
     boards: [{ id: bId, wsId, name: 'Mi primera pizarra', createdAt: now, updatedAt: now, shapes: [], cam: { x: W/2, y: H/2, z: 1 }, bg: 'dots' }],
-    currentWsId: wsId, currentBoardId: bId, font: 'Montserrat', theme: 'default',
+    currentWsId: wsId, currentBoardId: bId, font: 'Times New Roman', theme: 'default',
   };
   WB.shapes = []; seedDemo(ws.boards[0]);
   return ws;

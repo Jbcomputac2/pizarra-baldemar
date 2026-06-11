@@ -209,11 +209,9 @@ function refreshBrand() {
 
 /* ---------- font picker ---------- */
 const FONTS = [
-  { name: 'Montserrat', tag: 'Publicidad · geométrica' },
-  { name: 'Poppins', tag: 'Moderna · redondeada' },
-  { name: 'Oswald', tag: 'Condensada · titulares' },
-  { name: 'Bebas Neue', tag: 'Póster · alto impacto' },
   { name: 'Times New Roman', tag: 'Clásica · con serifa' },
+  { name: 'Montserrat', tag: 'Publicidad · geométrica' },
+  { name: 'Oswald', tag: 'Condensada · titulares' },
 ];
 function buildFonts() {
   const pop = document.getElementById('fontPop');
@@ -230,9 +228,9 @@ function buildFonts() {
 function closeFontPop() { document.getElementById('fontPop').classList.remove('open'); }
 function setFont(name) {
   const sel = WB.sel && WB.sel.length === 1 ? WB.sel[0] : null;
-  if (sel && (sel.type === 'text')) {
-    sel.font = name; commit();
-  } else if (sel && ['rect', 'ellipse', 'diamond', 'triangle', 'line', 'arrow', 'sticky'].includes(sel.type) && sel.text) {
+  if (sel && (sel.type === 'text' || sel.type === 'sticky')) {
+    sel.font = name; commit();            // texto o nota: su propia fuente
+  } else if (sel && ['rect', 'ellipse', 'diamond', 'triangle', 'line', 'arrow'].includes(sel.type) && sel.text) {
     sel.textFont = name; commit();        // inner text of a figure
   } else {
     WB.font = name; save();
@@ -450,8 +448,8 @@ function updateProps() {
     g.appendChild(wrap); el.appendChild(g);
   }
 
-  // formato de texto: negrita / cursiva / subrayado + listas (solo texto)
-  if (single && single.type === 'text') {
+  // formato de texto: negrita / cursiva / subrayado + listas
+  if (single && (single.type === 'text' || single.type === 'sticky')) {
     sep();
     const g = document.createElement('div'); g.className = 'grp';
     g.innerHTML = `<div class="lbl">Formato</div>`;
@@ -467,19 +465,41 @@ function updateProps() {
     row.appendChild(mk('italic', 'I', 'font-style:italic;font-weight:600'));
     row.appendChild(mk('underline', 'U', 'text-decoration:underline;font-weight:600'));
     g.appendChild(row);
-    // lists
-    const row2 = document.createElement('div'); row2.className = 'fmt-row'; row2.style.marginTop = '6px';
-    const mkList = (val, icon) => {
-      const b = document.createElement('button');
-      b.className = 'fmt-btn' + ((single.list || 'none') === val ? ' active' : '');
-      b.innerHTML = `<i data-lucide="${icon}"></i>`;
-      b.onclick = () => { single.list = (single.list === val ? 'none' : val); commit(); updateProps(); };
-      return b;
-    };
-    row2.appendChild(mkList('bullet', 'list'));
-    row2.appendChild(mkList('number', 'list-ordered'));
-    g.appendChild(row2);
+    // listas (solo texto)
+    if (single.type === 'text') {
+      const row2 = document.createElement('div'); row2.className = 'fmt-row'; row2.style.marginTop = '6px';
+      const mkList = (val, icon) => {
+        const b = document.createElement('button');
+        b.className = 'fmt-btn' + ((single.list || 'none') === val ? ' active' : '');
+        b.innerHTML = `<i data-lucide="${icon}"></i>`;
+        b.onclick = () => { single.list = (single.list === val ? 'none' : val); commit(); updateProps(); };
+        return b;
+      };
+      row2.appendChild(mkList('bullet', 'list'));
+      row2.appendChild(mkList('number', 'list-ordered'));
+      g.appendChild(row2);
+    }
     el.appendChild(g);
+
+    // patrón (cuadrícula / rayado / puntos) para notas
+    if (single.type === 'sticky') {
+      const g2 = document.createElement('div'); g2.className = 'grp';
+      g2.innerHTML = `<div class="lbl">Patrón</div>`;
+      const fsr = document.createElement('div'); fsr.className = 'fillstyle';
+      const styles = [
+        { k: 'solid', svg: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor" opacity=".25"/></svg>' },
+        { k: 'cross', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M4 15h16M10 4v16M15 4v16"/></svg>' },
+        { k: 'hatch', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M5 12l7-7M9 19l10-10M13 20l6-6"/></svg>' },
+        { k: 'dots', svg: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><g fill="currentColor"><circle cx="9" cy="9" r="1"/><circle cx="14" cy="9" r="1"/><circle cx="9" cy="14" r="1"/><circle cx="14" cy="14" r="1"/></g></svg>' },
+      ];
+      const cur = single.fillStyle || 'solid';
+      styles.forEach(st => {
+        const b = document.createElement('button'); b.className = 'fill-sw' + (cur === st.k ? ' active' : ''); b.innerHTML = st.svg;
+        b.onclick = () => { single.fillStyle = st.k; WB._stickyFill = st.k; commit(); updateProps(); };
+        fsr.appendChild(b);
+      });
+      g2.appendChild(fsr); el.appendChild(g2);
+    }
   }
 
   // letra (inner text of a shape): own size + color
@@ -681,6 +701,7 @@ function enterViewer() {
   bindViewerNav();
   // hide the fake presenter cursor
   const pc = document.getElementById('pcursor'); if (pc) pc.style.display = 'none';
+  setTimeout(viewerFit, 60);    // empezar mostrando todo el contenido
   // El espectador (abrió con enlace) NO puede salir al editor; solo el profesor que previsualiza.
   const exitBtn = document.getElementById('exitViewer');
   if (exitBtn) exitBtn.style.display = (typeof IS_SPECTATOR !== 'undefined' && IS_SPECTATOR) ? 'none' : '';
@@ -719,12 +740,50 @@ function bindViewerNav() {
   c.addEventListener('wheel', e => {
     e.preventDefault();
     if (e.ctrlKey || e.metaKey) {
-      const f = Math.exp(-e.deltaY * 0.01); const nz = Math.max(0.1, Math.min(8, viewer.cam.z * f));
+      const f = Math.exp(-e.deltaY * 0.0035); const nz = Math.max(0.1, Math.min(8, viewer.cam.z * f));
       const wx = (e.clientX - viewer.cam.x) / viewer.cam.z, wy = (e.clientY - viewer.cam.y) / viewer.cam.z;
       viewer.cam.z = nz; viewer.cam.x = e.clientX - wx * nz; viewer.cam.y = e.clientY - wy * nz;
+      updateViewerZoomUI();
     } else { viewer.cam.x -= e.deltaX; viewer.cam.y -= e.deltaY; }
   }, { passive: false });
   document.getElementById('exitViewer').onclick = exitViewer;
+
+  // zoom bar (botones + slider) para quien no tiene rueda de mouse
+  const slider = document.getElementById('vzSlider');
+  const zoomViewerTo = (pct, cx, cy) => {
+    const nz = Math.max(0.1, Math.min(8, pct / 100));
+    cx = cx == null ? W / 2 : cx; cy = cy == null ? H / 2 : cy;
+    const wx = (cx - viewer.cam.x) / viewer.cam.z, wy = (cy - viewer.cam.y) / viewer.cam.z;
+    viewer.cam.z = nz; viewer.cam.x = cx - wx * nz; viewer.cam.y = cy - wy * nz;
+    updateViewerZoomUI();
+  };
+  viewer._zoomTo = zoomViewerTo;
+  document.getElementById('vzIn').onclick = () => zoomViewerTo(viewer.cam.z * 100 + 20);
+  document.getElementById('vzOut').onclick = () => zoomViewerTo(viewer.cam.z * 100 - 20);
+  slider.oninput = () => zoomViewerTo(parseFloat(slider.value));
+  document.getElementById('vzFit').onclick = () => { viewerFit(); };
+  updateViewerZoomUI();
+}
+
+function updateViewerZoomUI() {
+  const pct = Math.round(viewer.cam.z * 100);
+  const slider = document.getElementById('vzSlider');
+  const lbl = document.getElementById('vzPct');
+  if (lbl) lbl.textContent = pct + '%';
+  if (slider) {
+    slider.value = Math.max(25, Math.min(300, pct));
+    const p = (slider.value - 25) / (300 - 25) * 100;
+    slider.style.background = `linear-gradient(90deg,var(--accent) 0%,var(--accent) ${p}%,var(--line) ${p}%,var(--line) 100%)`;
+  }
+}
+
+function viewerFit() {
+  if (!WB.shapes.length) { viewer._zoomTo && viewer._zoomTo(100); return; }
+  let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+  WB.shapes.forEach(s => { const b = getBounds(s); if (!b) return; x1 = Math.min(x1, b.x); y1 = Math.min(y1, b.y); x2 = Math.max(x2, b.x + b.w); y2 = Math.max(y2, b.y + b.h); });
+  const pad = 90; const z = Math.max(0.1, Math.min(2, Math.min((W - pad * 2) / (x2 - x1), (H - pad * 2) / (y2 - y1))));
+  viewer.cam.z = z; viewer.cam.x = W / 2 - (x1 + x2) / 2 * z; viewer.cam.y = H / 2 - (y1 + y2) / 2 * z;
+  updateViewerZoomUI();
 }
 function viewerLoop() {
   if (!viewer.on) return;

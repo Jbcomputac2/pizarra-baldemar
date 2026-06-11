@@ -112,7 +112,7 @@
   <div class="live-badge">
     <span class="rec"></span>
     <span class="t">EN VIVO</span>
-    <span class="by">Prof. Baldemar está explicando</span>
+    <span class="by" id="liveBy">Prof. Baldemar está explicando</span>
   </div>
   <button class="viewer-exit" id="exitViewer"><i data-lucide="x"></i> Salir de la vista</button>
   <div class="pcursor" id="pcursor">
@@ -133,7 +133,7 @@
   <div class="modal panel" style="position:relative">
     <button class="close" id="shareClose"><i data-lucide="x"></i></button>
     <h2>Compartir en vivo</h2>
-    <p class="sub">Comparte este enlace. Quien lo abra verá tu pizarra y todo lo que dibujes en tiempo real — solo podrá mover y hacer zoom, nada más.</p>
+    <p class="sub">Compartiendo: <strong id="shareBoardName" style="color:var(--accent)">—</strong>. Quien abra el enlace verá esta pizarra y todo lo que dibujes en tiempo real — solo podrá mover y hacer zoom.</p>
     <div class="share-link">
       <input id="shareUrl" readonly value="">
       <button id="copyLink">Copiar</button>
