@@ -201,7 +201,7 @@ function drawLaser(ctx) {
 function placeText(w, existing) {
   const ta = document.createElement('textarea');
   ta.className = 'editor';
-  const fs = existing ? existing.fs : (WB._newFs || 28);
+  const fs = existing ? existing.fs : (WB._newFs || 12);
   const fixed = !!(existing && existing.w && !existing.auto);
   const align = (existing && existing.align) || WB.align;
   const font = existing ? (existing.font || WB.font) : WB.font;
@@ -276,7 +276,7 @@ function placeSticky(w, existing) {
   const underline = existing ? !!existing.underline : false;
   const fillStyle = existing ? (existing.fillStyle || 'solid') : (WB._stickyFill || 'solid');
   const textColor = existing ? (existing.textColor || '#2a2a25') : '#2a2a25';
-  const fs = existing ? (existing.fs || 18) : 18;
+  const fs = existing ? (existing.fs || 12) : 12;
   const align = (existing && existing.align) || 'center';
   const sc = toScreen(x, y);
   const ta = document.createElement('textarea');
@@ -308,7 +308,7 @@ function placeShapeText(shape) {
   const ta = document.createElement('textarea');
   ta.className = 'editor';
   const isLine = shape.type === 'line' || shape.type === 'arrow';
-  const fs = shape.textFs || (isLine ? 18 : 28);
+  const fs = shape.textFs || 12;
   let cxw, cyw, ww, hh;
   if (isLine) { cxw = (shape.x1 + shape.x2) / 2; cyw = (shape.y1 + shape.y2) / 2; ww = 160; hh = fs * 1.4; }
   else { cxw = shape.x + shape.w / 2; cyw = shape.y + shape.h / 2; ww = shape.w - 24; hh = shape.h - 24; }

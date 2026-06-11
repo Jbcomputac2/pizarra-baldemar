@@ -236,7 +236,7 @@ function drawDots(ctx, b, color) {
 function drawShapeText(ctx, s) {
   if (!s.text || s._editing) return;
   const padding = 12;
-  const fs = s.textFs || 24;
+  const fs = s.textFs || 12;
   drawCenteredText(ctx, s.text, s.x + s.w / 2, s.y + s.h / 2, Math.max(20, s.w - padding * 2), fs, s.textColor || '#1d2128', s.align || 'center', { font: s.textFont, bold: s.textBold, italic: s.textItalic });
 }
 

@@ -436,8 +436,8 @@ function updateProps() {
     const g = document.createElement('div'); g.className = 'grp';
     g.innerHTML = `<div class="lbl">Tamaño</div>`;
     const wrap = document.createElement('div'); wrap.className = 'sizes';
-    const TFS = single.type === 'sticky' ? [14, 18, 24, 32] : [12, 20, 28, 42, 60];
-    const curFs = single.fs || (single.type === 'sticky' ? 18 : 28);
+    const TFS = single.type === 'sticky' ? [10, 12, 18, 24, 32] : [10, 12, 18, 28, 42];
+    const curFs = single.fs || 12;
     TFS.forEach((v, i) => {
       const dd = document.createElement('button'); dd.className = 'size-dot' + (curFs === v ? ' active' : '');
       const px = 6 + i * 3.4; dd.style.width = px + 'px'; dd.style.height = px + 'px';
@@ -510,8 +510,8 @@ function updateProps() {
     g.innerHTML = `<div class="lbl">Letra</div>`;
     // text size dots
     const wrap = document.createElement('div'); wrap.className = 'sizes';
-    const TFS = [18, 28, 42, 60];
-    const curFs = single.textFs || 28;
+    const TFS = [10, 12, 18, 28, 42];
+    const curFs = single.textFs || 12;
     TFS.forEach((v, i) => {
       const dd = document.createElement('button'); dd.className = 'size-dot' + (curFs === v ? ' active' : '');
       const px = 6 + i * 4; dd.style.width = px + 'px'; dd.style.height = px + 'px';
