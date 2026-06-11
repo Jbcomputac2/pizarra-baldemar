@@ -351,57 +351,66 @@ function updateProps() {
   // palette
   if (showColor) {
     const pal = isSticky ? STICKY_COLORS : PALETTE;
+    const isText = single ? single.type === 'text' : (WB.tool === 'text');
     const curColor = single ? single.color : (isSticky ? (WB._stickyColor || '#ffd43b') : WB.color);
     const grp = document.createElement('div'); grp.className = 'grp';
     grp.innerHTML = `<div class="lbl">${isSticky ? 'Nota' : 'Color'}</div>`;
+    const applyAny = (c, rebuild) => {
+      if (multi) { multi.forEach(sh => { if (colorTypes.includes(sh.type)) sh.color = c; }); commit(); }
+      else if (single) { single.color = c; commit(); }
+      else if (isSticky) WB._stickyColor = c; else WB.color = c;
+      if (rebuild) updateProps();
+    };
     const sws = document.createElement('div'); sws.className = 'swatches';
     pal.forEach(c => {
       const s = document.createElement('button'); s.className = 'sw' + (c === curColor ? ' active' : '');
       s.style.background = c; if (c === '#ffffff') s.style.boxShadow = 'inset 0 0 0 1px #d6d9e0';
-      s.onclick = () => {
-        if (multi) { multi.forEach(sh => { if (colorTypes.includes(sh.type)) sh.color = c; }); commit(); }
-        else if (single) { single.color = c; commit(); }
-        else if (isSticky) WB._stickyColor = c; else WB.color = c;
-        updateProps();
-      };
+      s.onclick = () => applyAny(c, true);
       sws.appendChild(s);
     });
     grp.appendChild(sws);
 
-    // paleta pastel arrastrable (solo notas): elige cualquier tono
-    if (isSticky) {
-      const applyCol = (c) => {
-        if (single) { single.color = c; commit(); }
-        else WB._stickyColor = c;
-        // refresh active states without rebuilding (smooth drag)
-        const lbl = grp.querySelector('.pastel-val'); if (lbl) lbl.style.background = c;
-      };
-      const wrap = document.createElement('div'); wrap.className = 'pastel-wrap';
-      const cv = document.createElement('canvas'); cv.className = 'pastel-strip'; cv.width = 120; cv.height = 88;
-      const cx = cv.getContext('2d');
-      // vertical: light→saturated; horizontal: hue
-      for (let x = 0; x < cv.width; x++) {
-        const h = x / cv.width * 360;
-        const g = cx.createLinearGradient(0, 0, 0, cv.height);
-        g.addColorStop(0, `hsl(${h},85%,93%)`);
-        g.addColorStop(0.5, `hsl(${h},75%,82%)`);
-        g.addColorStop(1, `hsl(${h},65%,68%)`);
-        cx.fillStyle = g; cx.fillRect(x, 0, 1, cv.height);
-      }
-      const pick = (e) => {
-        const r = cv.getBoundingClientRect();
-        const x = Math.max(0, Math.min(cv.width - 1, (e.clientX - r.left) / r.width * cv.width));
-        const y = Math.max(0, Math.min(cv.height - 1, (e.clientY - r.top) / r.height * cv.height));
-        const d = cx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
-        applyCol(`#${[d[0], d[1], d[2]].map(v => v.toString(16).padStart(2, '0')).join('')}`);
-      };
-      let picking = false;
-      cv.addEventListener('pointerdown', e => { picking = true; pick(e); try { cv.setPointerCapture(e.pointerId); } catch (_) {} });
-      cv.addEventListener('pointermove', e => { if (picking) pick(e); });
-      cv.addEventListener('pointerup', () => { picking = false; updateProps(); });
-      wrap.appendChild(cv);
-      grp.appendChild(wrap);
+    // fila de colores fosforescentes (neón) — para texto
+    if (isText) {
+      const nl = document.createElement('div'); nl.className = 'lbl'; nl.style.marginTop = '7px'; nl.textContent = 'Fosfo';
+      grp.appendChild(nl);
+      const nsw = document.createElement('div'); nsw.className = 'swatches';
+      NEON.forEach(c => {
+        const s = document.createElement('button'); s.className = 'sw neon' + (c.toLowerCase() === (curColor || '').toLowerCase() ? ' active' : '');
+        s.style.background = c;
+        s.onclick = () => applyAny(c, true);
+        nsw.appendChild(s);
+      });
+      grp.appendChild(nsw);
     }
+
+    // paleta arrastrable (notas, formas y texto): elige cualquier tono
+    const wrap = document.createElement('div'); wrap.className = 'pastel-wrap';
+    const cv = document.createElement('canvas'); cv.className = 'pastel-strip'; cv.width = 120; cv.height = 96;
+    const cx = cv.getContext('2d');
+    for (let x = 0; x < cv.width; x++) {
+      const h = x / cv.width * 360;
+      const g = cx.createLinearGradient(0, 0, 0, cv.height);
+      g.addColorStop(0, `hsl(${h},95%,95%)`);   // pastel claro
+      g.addColorStop(0.42, `hsl(${h},100%,55%)`); // vivo / neón
+      g.addColorStop(0.72, `hsl(${h},85%,42%)`);
+      g.addColorStop(1, `hsl(${h},70%,18%)`);    // oscuro
+      cx.fillStyle = g; cx.fillRect(x, 0, 1, cv.height);
+    }
+    const pick = (e) => {
+      const r = cv.getBoundingClientRect();
+      const x = Math.max(0, Math.min(cv.width - 1, (e.clientX - r.left) / r.width * cv.width));
+      const y = Math.max(0, Math.min(cv.height - 1, (e.clientY - r.top) / r.height * cv.height));
+      const d = cx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+      applyAny(`#${[d[0], d[1], d[2]].map(v => v.toString(16).padStart(2, '0')).join('')}`, false);
+    };
+    let picking = false;
+    cv.addEventListener('pointerdown', e => { picking = true; pick(e); try { cv.setPointerCapture(e.pointerId); } catch (_) {} });
+    cv.addEventListener('pointermove', e => { if (picking) pick(e); });
+    cv.addEventListener('pointerup', () => { picking = false; updateProps(); });
+    wrap.appendChild(cv);
+    grp.appendChild(wrap);
+
     el.appendChild(grp);
   }
 

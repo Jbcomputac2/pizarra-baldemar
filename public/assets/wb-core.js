@@ -41,6 +41,7 @@ function famStack(name) {
   return FONT_FALLBACK[name] || ("'" + name + "',system-ui,sans-serif");
 }
 const PALETTE = ['#1d2128','#e0383e','#f08c00','#2f9e44','#2A6FDB','#7048e8','#e64980','#ffffff'];
+const NEON = ['#39FF14','#CCFF00','#FFFF33','#FF6700','#FF073A','#FE019A','#BC13FE','#04D9FF'];
 const STICKY_COLORS = [
   '#ffd43b', '#a9e34b', '#74c0fc', '#ffa8a8', '#eebefa', '#ffffff',
   '#ffe5b4', '#c1f0c1', '#fcd5ce', '#d6ccff'
