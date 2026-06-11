@@ -609,16 +609,64 @@ function wireTopRight() {
   buildPastelPop();
 }
 
-/* 10 fondos pastel retro para el tema Pastel */
-const PASTEL_BGS = ['#f4ecd6','#f6d8c9','#f7c8c8','#e7d3e8','#d3e0ea','#cfe3d4','#e3e8c8','#f0dab0','#d8d2c4','#cfe5e3'];
+/* 10 texturas de papel antiguo (generadas, índice persistido) */
+const PAPER_DEFS = [
+  { label: 'Pergamino', base: '#efe6cd', edge: '#d8c79c' },
+  { label: 'Sepia',     base: '#e9d6ad', edge: '#caa86f' },
+  { label: 'Kraft',     base: '#d8bf95', edge: '#b69561' },
+  { label: 'Marfil',    base: '#f2ecd7', edge: '#ddd0ab' },
+  { label: 'Añejo',     base: '#e4d4ac', edge: '#bd9f6c' },
+  { label: 'Café',      base: '#d7c0a0', edge: '#a98455' },
+  { label: 'Lino',      base: '#ece6d6', edge: '#cdc3a9' },
+  { label: 'Amarillo',  base: '#efe2b2', edge: '#d2bd7c' },
+  { label: 'Carta gris','base': '#e3ded2', edge: '#c3bca6' },
+  { label: 'Rosa viejo',base: '#ecdcd1', edge: '#d3b6a6' },
+];
+let PAPER_URLS = null;
+function makePaper(def, size) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const x = c.getContext('2d');
+  x.fillStyle = def.base; x.fillRect(0, 0, size, size);
+  // mottling (soft blobs of darker/lighter tone) for an aged look
+  const rgb = hexToRgb(def.base), edge = hexToRgb(def.edge);
+  for (let i = 0; i < 140; i++) {
+    const px = Math.random() * size, py = Math.random() * size, r = 18 + Math.random() * 60;
+    const dark = Math.random() < 0.5;
+    const col = dark ? edge : { r: 255, g: 255, b: 255 };
+    const a = (dark ? 0.05 : 0.04) * Math.random();
+    const g = x.createRadialGradient(px, py, 0, px, py, r);
+    g.addColorStop(0, `rgba(${col.r},${col.g},${col.b},${a})`);
+    g.addColorStop(1, `rgba(${col.r},${col.g},${col.b},0)`);
+    x.fillStyle = g; x.beginPath(); x.arc(px, py, r, 0, 6.2832); x.fill();
+  }
+  // fine grain noise
+  const img = x.getImageData(0, 0, size, size), d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const n = (Math.random() - 0.5) * 16;
+    d[i] += n; d[i + 1] += n; d[i + 2] += n;
+  }
+  x.putImageData(img, 0, 0);
+  // a few faint fibers
+  x.strokeStyle = `rgba(${edge.r},${edge.g},${edge.b},0.08)`; x.lineWidth = 1;
+  for (let i = 0; i < 40; i++) {
+    const px = Math.random() * size, py = Math.random() * size, len = 6 + Math.random() * 22, ang = Math.random() * 6.28;
+    x.beginPath(); x.moveTo(px, py); x.lineTo(px + Math.cos(ang) * len, py + Math.sin(ang) * len); x.stroke();
+  }
+  return c.toDataURL('image/png');
+}
+function hexToRgb(h) { h = h.replace('#', ''); return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16) }; }
+function getPapers() { if (!PAPER_URLS) PAPER_URLS = PAPER_DEFS.map(d => makePaper(d, 256)); return PAPER_URLS; }
+
 function buildPastelPop() {
   const seg = document.getElementById('themeSeg');
   const pop = document.createElement('div'); pop.className = 'pastel-pop panel'; pop.id = 'pastelPop';
-  pop.innerHTML = '<div class="pp-title">Fondo pastel retro</div>';
+  pop.innerHTML = '<div class="pp-title">Papel antiguo</div>';
   const grid = document.createElement('div'); grid.className = 'pp-grid';
-  PASTEL_BGS.forEach(c => {
-    const b = document.createElement('button'); b.className = 'pp-sw'; b.style.background = c; b.dataset.c = c;
-    b.onclick = () => { applyPastelBg(c); };
+  const urls = getPapers();
+  urls.forEach((url, i) => {
+    const b = document.createElement('button'); b.className = 'pp-sw'; b.dataset.i = i;
+    b.style.backgroundImage = `url(${url})`; b.style.backgroundSize = 'cover'; b.title = PAPER_DEFS[i].label;
+    b.onclick = () => { applyPaper(i); };
     grid.appendChild(b);
   });
   pop.appendChild(grid);
@@ -627,11 +675,22 @@ function buildPastelPop() {
     if (!e.target.closest('#pastelPop') && !e.target.closest('#themeSeg')) pop.classList.remove('open');
   });
 }
-function applyPastelBg(c) {
-  WB.pastelBg = c;
-  document.body.style.setProperty('--bg', c);
-  document.querySelectorAll('#pastelPop .pp-sw').forEach(s => s.classList.toggle('active', s.dataset.c === c));
+function applyPaper(i) {
+  WB.paperIdx = i;
+  const urls = getPapers();
+  const v = document.getElementById('viewer');
+  [document.body, v].forEach(el => {
+    if (!el) return;
+    el.style.setProperty('--bg', PAPER_DEFS[i].base);
+    el.style.backgroundImage = `url(${urls[i]})`;
+    el.style.backgroundSize = '256px 256px';
+  });
+  document.querySelectorAll('#pastelPop .pp-sw').forEach(s => s.classList.toggle('active', +s.dataset.i === i));
   save();
+}
+function clearPaper() {
+  const v = document.getElementById('viewer');
+  [document.body, v].forEach(el => { if (!el) return; el.style.backgroundImage = ''; el.style.removeProperty('--bg'); });
 }
 function setBg(bg) {
   WB.bg = bg; save();
@@ -643,11 +702,10 @@ function setTheme(theme) {
   document.querySelectorAll('#themeSeg button').forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
   const pop = document.getElementById('pastelPop');
   if (theme === 'pastel') {
-    // aplica el color guardado (o el primero) y abre el selector de fondos
-    applyPastelBg(WB.pastelBg || PASTEL_BGS[0]);
+    applyPaper(WB.paperIdx != null ? WB.paperIdx : 0);
     if (pop) pop.classList.add('open');
   } else {
-    document.body.style.removeProperty('--bg');   // quita el fondo pastel
+    clearPaper();
     if (pop) pop.classList.remove('open');
   }
   save();
