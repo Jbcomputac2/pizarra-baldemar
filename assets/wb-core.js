@@ -19,7 +19,7 @@ const WB = {
   _raf: null,
 };
 
-const SIZES = { s: 2, m: 4, l: 7, xl: 14 };
+const SIZES = { s: 1, m: 2, l: 4, xl: 8 };
 const PALETTE = ['#1d2128','#e0383e','#f08c00','#2f9e44','#2A6FDB','#7048e8','#e64980','#ffffff'];
 const STICKY_COLORS = [
   '#ffd43b', '#a9e34b', '#74c0fc', '#ffa8a8', '#eebefa', '#ffffff',

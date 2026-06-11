@@ -267,7 +267,7 @@ function measureLine(line, fs, opts) {
 }
 
 function placeSticky(w, existing) {
-  const sw = existing ? existing.w : 190, sh = existing ? existing.h : 190;
+  const sw = existing ? existing.w : 120, sh = existing ? existing.h : 120;
   const color = existing ? existing.color : (WB._stickyColor || '#ffd43b');
   const x = existing ? existing.x : w.x, y = existing ? existing.y : w.y;
   const font = existing ? (existing.font || WB.font) : WB.font;
@@ -453,16 +453,16 @@ function onContext(e) {
 /* ---- demo seed ---- */
 function seedDemo(board) {
   WB.shapes = [
-    { id: uid(), type: 'text', x: -250, y: -150, text: 'Pizarra del\nProf. Baldemar', color: '#1d2128', fs: 46, align: 'left' },
-    { id: uid(), type: 'rect', x: -270, y: 30, w: 200, h: 110, color: '#2A6FDB', size: 4, fill: true, fillStyle: 'solid', text: 'Concepto A', align: 'center' },
-    { id: uid(), type: 'arrow', x1: -60, y1: 85, x2: 90, y2: 85, color: '#1d2128', size: 4 },
-    { id: uid(), type: 'ellipse', x: 100, y: 30, w: 180, h: 110, color: '#2f9e44', size: 4, fill: true, fillStyle: 'hatch', text: 'Resultado', align: 'center' },
-    { id: uid(), type: 'sticky', x: 330, y: -10, w: 170, h: 170, text: 'Doble clic para editar', color: '#ffd43b', fs: 18, align: 'center' },
-    { id: uid(), type: 'draw', points: spark(-250, 230), color: '#e0383e', size: 4 },
+    { id: uid(), type: 'text', x: -250, y: -150, text: 'Pizarra del\nProf. Baldemar', color: '#1d2128', fs: 28, align: 'left' },
+    { id: uid(), type: 'rect', x: -270, y: 20, w: 170, h: 90, color: '#2A6FDB', size: 2, fill: true, fillStyle: 'solid', text: 'Concepto A', align: 'center' },
+    { id: uid(), type: 'arrow', x1: -85, y1: 65, x2: 60, y2: 65, color: '#1d2128', size: 2 },
+    { id: uid(), type: 'ellipse', x: 75, y: 20, w: 160, h: 90, color: '#2f9e44', size: 2, fill: true, fillStyle: 'hatch', text: 'Resultado', align: 'center' },
+    { id: uid(), type: 'sticky', x: 280, y: -10, w: 120, h: 120, text: 'Doble clic para editar', color: '#ffd43b', fs: 12, align: 'center' },
+    { id: uid(), type: 'draw', points: spark(-250, 190), color: '#e0383e', size: 2 },
   ];
-  WB.cam = { x: W / 2 - 60, y: H / 2 - 40, z: 1 };
+  WB.cam = { x: W / 2 - 40, y: H / 2 - 20, z: 1 };
   if (board) { board.shapes = WB.shapes; board.cam = WB.cam; }
 }
 function spark(x, y) {
-  const pts = []; for (let i = 0; i <= 40; i++) { const t = i / 40; pts.push({ x: x + t * 520, y: y + Math.sin(t * 9) * 26 * (1 - t) }); } return pts;
+  const pts = []; for (let i = 0; i <= 40; i++) { const t = i / 40; pts.push({ x: x + t * 420, y: y + Math.sin(t * 9) * 20 * (1 - t) }); } return pts;
 }
