@@ -606,6 +606,32 @@ function wireTopRight() {
   document.querySelectorAll('#bgSeg button').forEach(b => b.addEventListener('click', () => setBg(b.dataset.bg)));
   document.querySelectorAll('#themeSeg button').forEach(b => b.addEventListener('click', () => setTheme(b.dataset.theme)));
   document.getElementById('presentBtn').addEventListener('click', openShare);
+  buildPastelPop();
+}
+
+/* 10 fondos pastel retro para el tema Pastel */
+const PASTEL_BGS = ['#f4ecd6','#f6d8c9','#f7c8c8','#e7d3e8','#d3e0ea','#cfe3d4','#e3e8c8','#f0dab0','#d8d2c4','#cfe5e3'];
+function buildPastelPop() {
+  const seg = document.getElementById('themeSeg');
+  const pop = document.createElement('div'); pop.className = 'pastel-pop panel'; pop.id = 'pastelPop';
+  pop.innerHTML = '<div class="pp-title">Fondo pastel retro</div>';
+  const grid = document.createElement('div'); grid.className = 'pp-grid';
+  PASTEL_BGS.forEach(c => {
+    const b = document.createElement('button'); b.className = 'pp-sw'; b.style.background = c; b.dataset.c = c;
+    b.onclick = () => { applyPastelBg(c); };
+    grid.appendChild(b);
+  });
+  pop.appendChild(grid);
+  seg.parentNode.appendChild(pop);
+  window.addEventListener('pointerdown', e => {
+    if (!e.target.closest('#pastelPop') && !e.target.closest('#themeSeg')) pop.classList.remove('open');
+  });
+}
+function applyPastelBg(c) {
+  WB.pastelBg = c;
+  document.body.style.setProperty('--bg', c);
+  document.querySelectorAll('#pastelPop .pp-sw').forEach(s => s.classList.toggle('active', s.dataset.c === c));
+  save();
 }
 function setBg(bg) {
   WB.bg = bg; save();
@@ -615,6 +641,16 @@ function setTheme(theme) {
   WB.theme = theme;
   document.body.className = theme === 'default' ? '' : 'theme-' + theme;
   document.querySelectorAll('#themeSeg button').forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
+  const pop = document.getElementById('pastelPop');
+  if (theme === 'pastel') {
+    // aplica el color guardado (o el primero) y abre el selector de fondos
+    applyPastelBg(WB.pastelBg || PASTEL_BGS[0]);
+    if (pop) pop.classList.add('open');
+  } else {
+    document.body.style.removeProperty('--bg');   // quita el fondo pastel
+    if (pop) pop.classList.remove('open');
+  }
+  save();
 }
 
 /* ---------- zoom ---------- */

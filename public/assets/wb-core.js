@@ -708,7 +708,7 @@ function loadAll() {
     }
   } catch (e) {}
   if (!WS) WS = freshWorkspace();
-  if (WS.font) WB.font = WS.font; if (WS.theme) WB.theme = WS.theme;
+  if (WS.font) WB.font = WS.font; if (WS.theme) WB.theme = WS.theme; if (WS.pastelBg) WB.pastelBg = WS.pastelBg;
   applyBoard(currentBoard());
 
   // Always sync from Directus so every device shows the same boards
@@ -752,7 +752,7 @@ function save() {
   saveTimer = setTimeout(() => {
     const b = currentBoard();
     b.shapes = WB.shapes; b.cam = WB.cam; b.bg = WB.bg; b.updatedAt = Date.now();
-    WS.font = WB.font; WS.theme = WB.theme;
+    WS.font = WB.font; WS.theme = WB.theme; WS.pastelBg = WB.pastelBg;
     try { localStorage.setItem(STORE_KEY, JSON.stringify(WS)); } catch (e) {}
     pushBoard(b);
     if (typeof refreshSidebar === 'function') refreshSidebar();

@@ -409,3 +409,15 @@ body.theme-pastel .brand .mark{background:#2f9e6e;box-shadow:inset 0 0 0 1px rgb
 .pastel-strip{width:120px;height:96px;border-radius:10px;cursor:crosshair;
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);touch-action:none}
 .sw.neon{box-shadow:inset 0 0 0 1px rgba(0,0,0,.12), 0 0 6px -1px currentColor}
+
+/* pastel retro background picker (appears when Pastel theme is chosen) */
+.pastel-pop{position:absolute;top:calc(100% + 8px);right:170px;z-index:46;padding:12px;
+  border-radius:16px;display:none}
+.pastel-pop.open{display:block}
+.pp-title{font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--ink-faint);
+  text-transform:uppercase;font-weight:700;margin-bottom:9px;text-align:center}
+.pp-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.pp-sw{width:26px;height:26px;border-radius:8px;cursor:pointer;transition:.1s;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.10)}
+.pp-sw:hover{transform:scale(1.12)}
+.pp-sw.active{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}
