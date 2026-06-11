@@ -20,6 +20,26 @@ const WB = {
 };
 
 const SIZES = { s: 1, m: 2, l: 4, xl: 8 };
+
+/* font family stacks with sensible fallbacks (canvas + editors) */
+const FONT_FALLBACK = {
+  'Times New Roman': "'Times New Roman',Times,serif",
+  'Calibri': "'Calibri','Carlito','Segoe UI',sans-serif",
+  'Roboto': "'Roboto',system-ui,sans-serif",
+  'Inter': "'Inter',system-ui,sans-serif",
+  'Ubuntu': "'Ubuntu',system-ui,sans-serif",
+  'Montserrat': "'Montserrat',sans-serif",
+  'Oswald': "'Oswald',sans-serif",
+  'Bebas Neue': "'Bebas Neue',Impact,sans-serif",
+  'Concert One': "'Concert One',sans-serif",
+  'Merriweather': "'Merriweather',Georgia,serif",
+  'Source Serif': "'Source Serif 4','Source Serif Pro',Georgia,serif",
+  'Playfair Display': "'Playfair Display',Georgia,serif",
+};
+function famStack(name) {
+  name = name || WB.font;
+  return FONT_FALLBACK[name] || ("'" + name + "',system-ui,sans-serif");
+}
 const PALETTE = ['#1d2128','#e0383e','#f08c00','#2f9e44','#2A6FDB','#7048e8','#e64980','#ffffff'];
 const STICKY_COLORS = [
   '#ffd43b', '#a9e34b', '#74c0fc', '#ffa8a8', '#eebefa', '#ffffff',
@@ -217,8 +237,8 @@ function fillShape(ctx, s) {
   ctx.restore();
 }
 function drawHatch(ctx, b, color, deg) {
-  ctx.strokeStyle = color; ctx.globalAlpha = 0.55; ctx.lineWidth = 1.2;
-  const step = 8, d = Math.max(b.w, b.h) * 2;
+  ctx.strokeStyle = color; ctx.globalAlpha = 0.5; ctx.lineWidth = 0.7;
+  const step = 5, d = Math.max(b.w, b.h) * 2;
   ctx.save(); ctx.translate(b.x + b.w / 2, b.y + b.h / 2); ctx.rotate(deg * Math.PI / 180);
   ctx.beginPath();
   for (let i = -d; i < d; i += step) { ctx.moveTo(i, -d); ctx.lineTo(i, d); }
@@ -226,9 +246,9 @@ function drawHatch(ctx, b, color, deg) {
 }
 function drawDots(ctx, b, color) {
   ctx.fillStyle = color; ctx.globalAlpha = 0.45;
-  const step = 9;
-  for (let y = b.y + 4; y < b.y + b.h; y += step)
-    for (let x = b.x + 4; x < b.x + b.w; x += step) { ctx.beginPath(); ctx.arc(x, y, 1.3, 0, 6.2832); ctx.fill(); }
+  const step = 6;
+  for (let y = b.y + 3; y < b.y + b.h; y += step)
+    for (let x = b.x + 3; x < b.x + b.w; x += step) { ctx.beginPath(); ctx.arc(x, y, 0.9, 0, 6.2832); ctx.fill(); }
   ctx.globalAlpha = 1;
 }
 
@@ -262,7 +282,7 @@ function innerFontStr(fs, o) {
   const fam = o.font || WB.font;
   const weight = o.bold ? 800 : 600;
   const style = o.italic ? 'italic ' : '';
-  return `${style}${weight} ${fs}px '${fam}', 'Poppins', system-ui, sans-serif`;
+  return `${style}${weight} ${fs}px ${famStack(fam)}`;
 }
 
 /* centered, wrapped text helper */
@@ -342,14 +362,14 @@ function wrapText(ctx, text, x, y, maxW, lh) {
   if (line) ctx.fillText(line, x, yy);
 }
 
-function fontStr(fs, weight) { return `${weight || 600} ${fs}px '${WB.font}', 'Poppins', system-ui, sans-serif`; }
+function fontStr(fs, weight) { return `${weight || 600} ${fs}px ${famStack(WB.font)}`; }
 
 /* font string honoring a text shape's own font + bold/italic */
 function fontStrFor(s, fs) {
   const fam = s.font || WB.font;
   const weight = s.bold ? 800 : 600;
   const style = s.italic ? 'italic ' : '';
-  return `${style}${weight} ${fs}px '${fam}', 'Poppins', system-ui, sans-serif`;
+  return `${style}${weight} ${fs}px ${famStack(fam)}`;
 }
 
 /* paragraphs with list prefixes applied (display only) */

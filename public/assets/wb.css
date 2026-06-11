@@ -228,8 +228,10 @@ canvas#board{position:absolute;inset:0;display:block;touch-action:none}
 .font-btn .cur{font-size:12px;color:var(--ink-faint);font-weight:600}
 .font-btn svg{width:14px;height:14px;color:var(--ink-faint)}
 .font-pop{position:absolute;top:calc(100% + 8px);right:0;z-index:45;min-width:208px;padding:7px;
-  border-radius:16px;display:none}
+  border-radius:16px;display:none;max-height:64vh;overflow-y:auto}
 .font-pop.open{display:block}
+.font-pop::-webkit-scrollbar{width:6px}
+.font-pop::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
 .font-pop .fp{display:flex;flex-direction:column;width:100%;padding:9px 12px;border-radius:11px;text-align:left;transition:.1s}
 .font-pop .fp:hover{background:var(--panel-2)}
 .font-pop .fp.active{background:var(--accent-soft)}
@@ -396,3 +398,13 @@ body.theme-pro .tool svg{stroke-width:1.8px}
 body.theme-pro .brand .name{color:#fff}
 body.theme-pro .seg button.active,body.theme-pro .tool.active{color:#fff}
 body.theme-pro .sw{box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+
+/* Variation 4: "Pastel" — soft mint paper background */
+body.theme-pastel{--bg:#eaf4ee;--accent:#2f9e6e;--accent-soft:#2f9e6e1f;--accent-press:#27855c;
+  --radius:16px;--radius-lg:24px}
+body.theme-pastel .brand .mark{background:#2f9e6e;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18),0 2px 8px -2px #2f9e6e}
+
+/* pastel palette picker (sticky notes) */
+.pastel-wrap{padding:0 11px;margin-top:8px;width:100%;display:flex;justify-content:center}
+.pastel-strip{width:120px;height:88px;border-radius:10px;cursor:crosshair;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);touch-action:none}

@@ -218,7 +218,7 @@ function placeText(w, existing) {
     color: existing ? existing.color : WB.color,
     fontWeight: bold ? 800 : 600, fontStyle: italic ? 'italic' : 'normal',
     textDecoration: underline ? 'underline' : 'none',
-    fontFamily: `'${font}', 'Poppins', sans-serif`,
+    fontFamily: famStack(font),
     whiteSpace: fixed ? 'pre-wrap' : 'pre',
     textAlign: align,
     padding: (4 * WB.cam.z) + 'px', margin: (-4 * WB.cam.z) + 'px', border: 'none', boxSizing: 'content-box',
@@ -262,7 +262,7 @@ function measureLine(line, fs, opts) {
   const fam = opts.font || WB.font;
   const weight = opts.bold ? 800 : 600;
   const style = opts.italic ? 'italic ' : '';
-  ctx.save(); ctx.font = `${style}${weight} ${fs}px '${fam}', 'Poppins', sans-serif`;
+  ctx.save(); ctx.font = `${style}${weight} ${fs}px ${famStack(fam)}`;
   const w = ctx.measureText(line || ' ').width; ctx.restore(); return w;
 }
 
@@ -287,7 +287,7 @@ function placeSticky(w, existing) {
     fontSize: fs * WB.cam.z + 'px', background: color, color: textColor,
     fontWeight: bold ? 800 : 600, fontStyle: italic ? 'italic' : 'normal',
     textDecoration: underline ? 'underline' : 'none',
-    fontFamily: `'${font}', 'Poppins', sans-serif`,
+    fontFamily: famStack(font),
     display: 'flex', textAlign: align,
     padding: '14px', boxSizing: 'border-box'
   });
@@ -320,7 +320,7 @@ function placeShapeText(shape) {
     fontSize: fs * WB.cam.z + 'px', lineHeight: '1.3',
     color: shape.textColor || '#1d2128',
     fontWeight: shape.textBold ? 800 : 600, fontStyle: shape.textItalic ? 'italic' : 'normal',
-    fontFamily: `'${innerFont}', 'Poppins', sans-serif`,
+    fontFamily: famStack(innerFont),
     textAlign: shape.align || 'center', padding: '0',
     background: 'transparent', border: 'none', resize: 'none', overflow: 'hidden',
     display: 'flex', alignItems: 'center'

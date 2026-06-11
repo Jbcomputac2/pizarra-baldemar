@@ -209,16 +209,25 @@ function refreshBrand() {
 
 /* ---------- font picker ---------- */
 const FONTS = [
-  { name: 'Times New Roman', tag: 'Clásica · con serifa' },
+  { name: 'Times New Roman', tag: 'Clásica · serifa' },
+  { name: 'Calibri', tag: 'Office · limpia' },
+  { name: 'Roboto', tag: 'Neutral · pantalla' },
+  { name: 'Inter', tag: 'Interfaz · moderna' },
+  { name: 'Ubuntu', tag: 'Redondeada' },
   { name: 'Montserrat', tag: 'Publicidad · geométrica' },
   { name: 'Oswald', tag: 'Condensada · titulares' },
+  { name: 'Bebas Neue', tag: 'Póster · alto impacto' },
+  { name: 'Concert One', tag: 'Divertida · gruesa' },
+  { name: 'Merriweather', tag: 'Lectura · serifa' },
+  { name: 'Source Serif', tag: 'Editorial · serifa' },
+  { name: 'Playfair Display', tag: 'Elegante · serifa' },
 ];
 function buildFonts() {
   const pop = document.getElementById('fontPop');
   FONTS.forEach(f => {
     const b = document.createElement('button');
     b.className = 'fp' + (f.name === WB.font ? ' active' : ''); b.dataset.font = f.name;
-    b.innerHTML = `<span class="nm" style="font-family:'${f.name}',sans-serif">${f.name}</span><span class="tag">${f.tag}</span>`;
+    b.innerHTML = `<span class="nm" style="font-family:${famStack(f.name)}">${f.name}</span><span class="tag">${f.tag}</span>`;
     b.onclick = () => { setFont(f.name); closeFontPop(); };
     pop.appendChild(b);
   });
@@ -236,7 +245,7 @@ function setFont(name) {
     WB.font = name; save();
   }
   document.getElementById('fontCur').textContent = name;
-  const aa = document.querySelector('.font-btn .aa'); if (aa) aa.style.fontFamily = `'${name}',sans-serif`;
+  const aa = document.querySelector('.font-btn .aa'); if (aa) aa.style.fontFamily = famStack(name);
   document.querySelectorAll('#fontPop .fp').forEach(b => b.classList.toggle('active', b.dataset.font === name));
 }
 
@@ -357,7 +366,43 @@ function updateProps() {
       };
       sws.appendChild(s);
     });
-    grp.appendChild(sws); el.appendChild(grp);
+    grp.appendChild(sws);
+
+    // paleta pastel arrastrable (solo notas): elige cualquier tono
+    if (isSticky) {
+      const applyCol = (c) => {
+        if (single) { single.color = c; commit(); }
+        else WB._stickyColor = c;
+        // refresh active states without rebuilding (smooth drag)
+        const lbl = grp.querySelector('.pastel-val'); if (lbl) lbl.style.background = c;
+      };
+      const wrap = document.createElement('div'); wrap.className = 'pastel-wrap';
+      const cv = document.createElement('canvas'); cv.className = 'pastel-strip'; cv.width = 120; cv.height = 88;
+      const cx = cv.getContext('2d');
+      // vertical: light→saturated; horizontal: hue
+      for (let x = 0; x < cv.width; x++) {
+        const h = x / cv.width * 360;
+        const g = cx.createLinearGradient(0, 0, 0, cv.height);
+        g.addColorStop(0, `hsl(${h},85%,93%)`);
+        g.addColorStop(0.5, `hsl(${h},75%,82%)`);
+        g.addColorStop(1, `hsl(${h},65%,68%)`);
+        cx.fillStyle = g; cx.fillRect(x, 0, 1, cv.height);
+      }
+      const pick = (e) => {
+        const r = cv.getBoundingClientRect();
+        const x = Math.max(0, Math.min(cv.width - 1, (e.clientX - r.left) / r.width * cv.width));
+        const y = Math.max(0, Math.min(cv.height - 1, (e.clientY - r.top) / r.height * cv.height));
+        const d = cx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+        applyCol(`#${[d[0], d[1], d[2]].map(v => v.toString(16).padStart(2, '0')).join('')}`);
+      };
+      let picking = false;
+      cv.addEventListener('pointerdown', e => { picking = true; pick(e); try { cv.setPointerCapture(e.pointerId); } catch (_) {} });
+      cv.addEventListener('pointermove', e => { if (picking) pick(e); });
+      cv.addEventListener('pointerup', () => { picking = false; updateProps(); });
+      wrap.appendChild(cv);
+      grp.appendChild(wrap);
+    }
+    el.appendChild(grp);
   }
 
   // size
