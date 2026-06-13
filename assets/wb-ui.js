@@ -853,7 +853,8 @@ function enterViewer() {
   // El espectador (abrió con enlace) NO puede salir al editor; solo el profesor que previsualiza.
   const exitBtn = document.getElementById('exitViewer');
   if (exitBtn) exitBtn.style.display = (typeof IS_SPECTATOR !== 'undefined' && IS_SPECTATOR) ? 'none' : '';
-  startLivePolling();   // re-read board from server so viewers see real drawings
+  // Auto-actualización DESACTIVADA: el espectador ve los cambios al refrescar (F5).
+  // startLivePolling();
   // mostrar el nombre de la pizarra en el indicador EN VIVO
   const by = document.querySelector('.live-badge .by');
   if (by) { const nm = (currentBoard() && currentBoard().name) || ''; by.textContent = nm ? ('Prof. Baldemar · ' + nm) : 'Prof. Baldemar está explicando'; }
