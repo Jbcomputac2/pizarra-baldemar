@@ -364,11 +364,26 @@ function handleImageFile(file) {
   reader.onload = () => {
     const img = new Image();
     img.onload = () => {
-      const max = 360; let iw = img.width, ih = img.height; const sc = Math.min(max / iw, max / ih, 1);
-      iw *= sc; ih *= sc;
+      // Re-encode the image smaller so it doesn't blow up the saved payload.
+      // Stored resolution capped at ~1100px on the long side, JPEG ~0.72.
+      const STORE_MAX = 1100;
+      const ss = Math.min(STORE_MAX / img.width, STORE_MAX / img.height, 1);
+      const cw = Math.round(img.width * ss), ch = Math.round(img.height * ss);
+      const cvs = document.createElement('canvas'); cvs.width = cw; cvs.height = ch;
+      const cx = cvs.getContext('2d');
+      cx.fillStyle = '#ffffff'; cx.fillRect(0, 0, cw, ch);   // flatten transparency for JPEG
+      cx.drawImage(img, 0, 0, cw, ch);
+      // PNG with alpha if small, else JPEG to keep size down
+      let src;
+      const hasAlpha = /\.png$/i.test(file.name) || file.type === 'image/png';
+      src = (hasAlpha && (cw * ch) < 250000) ? cvs.toDataURL('image/png') : cvs.toDataURL('image/jpeg', 0.72);
+
+      // on-canvas display size (independent of stored resolution)
+      const max = 360; const sc = Math.min(max / img.width, max / img.height, 1);
+      const iw = img.width * sc, ih = img.height * sc;
       const at = WB._pendingImgAt || toWorld(W / 2, H / 2);
-      WB.imageCache[reader.result] = img;
-      WB.shapes.push({ id: uid(), type: 'image', x: at.x, y: at.y, w: iw, h: ih, src: reader.result });
+      const cached = new Image(); cached.src = src; WB.imageCache[src] = cached;
+      WB.shapes.push({ id: uid(), type: 'image', x: at.x, y: at.y, w: iw, h: ih, src });
       commit(); setActiveTool('select');
     };
     img.src = reader.result;
