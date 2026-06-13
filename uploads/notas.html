@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Notas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-grad: linear-gradient(135deg, #faf8f4 0%, #f4f0e8 100%);
+    --surface: #ffffff;
+    --surface2: #f5f1ea;
+    --border: #ebe5d9;
+    --border2: #d8d1c2;
+    --text: #1a1815;
+    --text2: #6b6760;
+    --text3: #a8a299;
+    --accent: #2d4a3e;
+    --accent-light: #e8f0ec;
+    --accent-hover: #3a5a4d;
+    --shadow-sm: 0 1px 2px rgba(40, 30, 15, 0.04);
+    --shadow-md: 0 4px 16px rgba(40, 30, 15, 0.06);
+    --shadow-lg: 0 12px 40px rgba(40, 30, 15, 0.08);
+    --radius: 12px;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-grad);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.005em;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 60px;
+    background: rgba(255,255,255,0.6);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 22px 0; gap: 8px; flex-shrink: 0;
+  }
+  .logo {
+    font-family: var(--font-display);
+    font-size: 26px; font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 18px; line-height: 1;
+    font-style: italic;
+  }
+  .sb-btn {
+    width: 40px; height: 40px; border-radius: 10px;
+    border: none; background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text3); transition: all 0.18s ease;
+  }
+  .sb-btn:hover { background: var(--surface2); color: var(--text2); transform: translateY(-1px); }
+  .sb-btn.active { background: var(--accent-light); color: var(--accent); }
+  .sb-spacer { flex: 1; }
+
+  /* LIST PANEL */
+  .list-panel {
+    width: 280px;
+    background: rgba(255,255,255,0.4);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; flex-shrink: 0;
+  }
+  .list-header { padding: 22px 18px 14px; border-bottom: 1px solid var(--border); }
+  .list-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .list-title {
+    font-family: var(--font-display);
+    font-size: 26px; color: var(--text);
+    font-weight: 500; letter-spacing: -0.02em;
+  }
+  .btn-new {
+    width: 34px; height: 34px; border-radius: 10px;
+    border: none; background: var(--accent); color: #fff;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 20px; transition: all 0.18s ease;
+    box-shadow: var(--shadow-sm); line-height: 1; padding-bottom: 2px;
+  }
+  .btn-new:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  .search-wrap {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 9px 12px;
+    transition: border-color 0.15s;
+  }
+  .search-wrap:focus-within { border-color: var(--accent); }
+  .search-wrap svg { flex-shrink: 0; color: var(--text3); }
+  .search-wrap input {
+    border: none; background: transparent;
+    font-family: var(--font-body); font-size: 13px;
+    color: var(--text); outline: none; width: 100%;
+  }
+  .search-wrap input::placeholder { color: var(--text3); }
+
+  .notes-list {
+    flex: 1; overflow-y: auto;
+    padding: 10px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .notes-list::-webkit-scrollbar { width: 6px; }
+  .notes-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  .note-item {
+    padding: 13px 14px; border-radius: var(--radius);
+    cursor: pointer; border: 1px solid transparent;
+    transition: all 0.18s ease; user-select: none;
+    position: relative;
+    background: var(--note-bg, var(--surface));
+  }
+  .note-item:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+  .note-item.active {
+    border-color: rgba(45, 74, 62, 0.3);
+    box-shadow: var(--shadow-md);
+  }
+  .note-item.active::before {
+    content: ''; position: absolute;
+    left: -10px; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 60%;
+    background: var(--accent); border-radius: 0 3px 3px 0;
+  }
+  .note-item-title {
+    font-size: 14px; font-weight: 600; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 4px; letter-spacing: -0.01em;
+  }
+  .note-item-preview {
+    font-size: 12px; color: var(--text2);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 6px; line-height: 1.4;
+  }
+  .note-item-date { font-size: 11px; color: var(--text3); font-weight: 500; }
+
+  /* TAG PILLS en la lista */
+  .note-item-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+    background: var(--tag-bg, rgba(0,0,0,0.06));
+    color: var(--tag-color, var(--text2));
+  }
+
+  /* FILTROS DE TAGS */
+  .tag-filters {
+    padding: 10px 14px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex; flex-wrap: wrap; gap: 5px;
+    max-height: 110px; overflow-y: auto;
+  }
+  .tag-filters::-webkit-scrollbar { width: 4px; }
+  .tag-filters::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+  .filter-btn {
+    font-family: var(--font-body); font-size: 11px; font-weight: 500;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.6);
+    color: var(--text2);
+    padding: 4px 10px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .filter-btn:hover { background: var(--surface); border-color: var(--border2); }
+  .filter-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .empty-list {
+    text-align: center; padding: 50px 20px;
+    color: var(--text3); font-size: 13px; line-height: 1.6;
+  }
+  .empty-list svg { margin-bottom: 14px; opacity: 0.3; }
+
+  /* EDITOR */
+  .editor { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--surface); }
+  .editor-toolbar {
+    padding: 12px 28px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 2px;
+    background: rgba(255,255,255,0.7); backdrop-filter: blur(10px);
+    flex-wrap: wrap;
+  }
+  .tb-btn {
+    width: 32px; height: 32px; border-radius: 8px;
+    border: none; background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text2); transition: all 0.15s;
+  }
+  .tb-btn:hover { background: var(--surface2); color: var(--text); }
+  .tb-btn svg { width: 16px; height: 16px; }
+  .tb-sep { width: 1px; height: 20px; background: var(--border); margin: 0 6px; }
+  .tb-spacer { flex: 1; }
+  .apa-select {
+    font-family: var(--font-body); font-size: 12px; font-weight: 500;
+    border: 1px solid var(--border); border-radius: 7px;
+    background: var(--surface); color: var(--text2);
+    padding: 5px 26px 5px 10px;
+    cursor: pointer; outline: none;
+    -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236b6760' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat; background-position: right 8px center;
+    transition: border-color 0.15s;
+  }
+  .apa-select:hover { border-color: var(--accent); }
+  .btn-save {
+    padding: 7px 16px; border-radius: 8px;
+    border: none; background: var(--accent); color: #fff;
+    font-family: var(--font-body); font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; box-shadow: var(--shadow-sm);
+  }
+  .btn-save:hover:not(:disabled) { background: var(--accent-hover); }
+  .btn-save:disabled { opacity: 0.4; cursor: default; }
+  .btn-delete {
+    width: 32px; height: 32px; border-radius: 8px;
+    border: none; background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text3); transition: all 0.15s;
+  }
+  .btn-delete:hover { background: #fce8e8; color: #b03030; }
+
+  .editor-body {
+    flex: 1; display: flex; flex-direction: column;
+    padding: 28px 28px 20px;
+    overflow-y: auto;
+    background: #ebe5d9;
+    align-items: center;
+  }
+  .editor-body::-webkit-scrollbar { width: 6px; }
+  .editor-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  /* PÁGINA ESTILO APA con saltos de página visuales */
+  /* PÁGINA ESTILO APA */
+  .apa-page {
+    width: 816px; /* 8.5in × 96dpi */
+    max-width: 100%;
+    min-height: 1056px; /* 11in × 96dpi */
+    background: #fff;
+    padding: 96px; /* 1in margen × 96dpi */
+    box-shadow: var(--shadow-lg);
+    border-radius: 2px;
+    position: relative;
+    margin-bottom: 28px;
+  }
+  /* Contador de página flotante */
+  .page-indicator {
+    position: fixed;
+    bottom: 58px; right: 20px;
+    background: rgba(20, 18, 14, 0.75);
+    color: #fff;
+    font-size: 11px; font-weight: 500;
+    padding: 5px 11px; border-radius: 12px;
+    z-index: 30;
+    font-family: var(--font-body);
+    pointer-events: none;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .page-indicator.show { opacity: 1; }
+
+  .editor-title-input {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 14pt;
+    font-weight: bold;
+    color: var(--text);
+    border: none; background: transparent; outline: none;
+    width: 100%; margin-bottom: 24px;
+    line-height: 2;
+    text-align: center;
+  }
+  .editor-title-input::placeholder { color: var(--text3); font-style: italic; font-weight: normal; }
+
+  .editor-meta {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 24px; flex-wrap: wrap;
+    padding-bottom: 16px; border-bottom: 1px solid var(--border);
+    font-family: var(--font-body);
+  }
+  .meta-date { font-size: 11px; color: var(--text3); font-weight: 500; letter-spacing: 0.02em; text-transform: uppercase; }
+
+  .tag-select {
+    font-family: var(--font-body); font-size: 12px; font-weight: 500;
+    border: 1px solid var(--border); border-radius: 20px;
+    background: var(--surface); color: var(--text2);
+    padding: 4px 14px;
+    cursor: text; outline: none;
+    transition: border-color 0.15s;
+    min-width: 140px;
+  }
+  .tag-select:hover, .tag-select:focus { border-color: var(--accent); }
+  .tag-select::placeholder { color: var(--text3); font-style: italic; }
+
+  .editor-content-area {
+    flex: 1;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12pt;
+    line-height: 2;
+    color: #000;
+    outline: none; width: 100%; min-height: 400px;
+    text-align: justify;
+  }
+  .editor-content-area:empty:before {
+    content: attr(data-placeholder);
+    color: var(--text3); font-style: italic;
+    pointer-events: none;
+  }
+  /* Párrafos con sangría de primera línea (estilo APA) */
+  .editor-content-area > p,
+  .editor-content-area > div {
+    margin: 0;
+    text-indent: 0.5in;
+  }
+  /* Encabezados estilo APA */
+  .editor-content-area h1 {
+    font-size: 12pt; font-weight: bold;
+    text-align: center; margin: 0;
+    text-indent: 0;
+  }
+  .editor-content-area h2 {
+    font-size: 12pt; font-weight: bold;
+    text-align: left; margin: 0;
+    text-indent: 0;
+  }
+  .editor-content-area h3 {
+    font-size: 12pt; font-weight: bold; font-style: italic;
+    text-align: left; margin: 0;
+    text-indent: 0;
+  }
+  .editor-content-area blockquote {
+    margin: 0 0 0 0.5in;
+    text-indent: 0;
+    font-style: normal;
+  }
+  /* Tablas APA */
+  .editor-content-area table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+    font-size: 11pt;
+    table-layout: fixed;
+  }
+  .editor-content-area table th,
+  .editor-content-area table td {
+    padding: 6px 10px;
+    border: none;
+    text-align: left;
+    text-indent: 0;
+    vertical-align: top;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .editor-content-area table thead {
+    border-top: 1.5px solid #000;
+    border-bottom: 1px solid #000;
+  }
+  .editor-content-area table tbody {
+    border-bottom: 1.5px solid #000;
+  }
+  .editor-content-area table th {
+    font-weight: normal;
+    font-style: italic;
+  }
+  /* Enlaces */
+  .editor-content-area a {
+    color: #1a4a7a;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+  .editor-content-area a:hover { color: #2d4a3e; }
+  .editor-content-area table td > *,
+  .editor-content-area table th > * {
+    text-indent: 0 !important;
+    margin: 0;
+  }
+
+  /* IMÁGENES */
+  .editor-content-area img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 8px 0;
+    cursor: pointer;
+    display: block;
+    transition: outline 0.15s;
+  }
+  .editor-content-area img.selected {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Popup de redimensionar */
+  .img-resize-popup {
+    position: fixed;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    box-shadow: var(--shadow-lg);
+    display: none;
+    z-index: 50;
+    gap: 8px;
+    align-items: center;
+    font-size: 12px;
+  }
+  .img-resize-popup.show { display: flex; }
+  .img-resize-popup label { color: var(--text2); font-weight: 500; }
+  .img-resize-popup input[type="range"] {
+    width: 120px; accent-color: var(--accent);
+  }
+  .img-resize-popup .preset-btn {
+    padding: 4px 10px; border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface); color: var(--text2);
+    font-size: 11px; cursor: pointer; font-weight: 500;
+    transition: all 0.15s;
+  }
+  .img-resize-popup .preset-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+  .img-resize-popup .del-btn {
+    padding: 4px 8px; border-radius: 6px;
+    border: 1px solid #f5cccc;
+    background: #fdf0f0; color: #b03030;
+    font-size: 11px; cursor: pointer; font-weight: 500;
+    transition: all 0.15s;
+  }
+  .img-resize-popup .del-btn:hover { background: #fce0e0; }
+
+  /* MODAL DE COMPARTIR */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(20, 18, 14, 0.5);
+    display: none; align-items: center; justify-content: center;
+    z-index: 150;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: var(--surface);
+    border-radius: 18px;
+    padding: 32px;
+    width: 460px; max-width: 90vw;
+    box-shadow: var(--shadow-lg);
+  }
+  .modal-title {
+    font-family: var(--font-display);
+    font-size: 24px; font-weight: 500;
+    margin-bottom: 8px; color: var(--text);
+  }
+  .modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; line-height: 1.5; }
+  .share-toggle {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; border-radius: 12px;
+    background: var(--surface2); margin-bottom: 16px;
+  }
+  .share-toggle-text { flex: 1; }
+  .share-toggle-text strong { display: block; font-size: 14px; color: var(--text); margin-bottom: 2px; }
+  .share-toggle-text small { font-size: 12px; color: var(--text2); }
+  .switch {
+    position: relative; width: 44px; height: 24px;
+    flex-shrink: 0;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch-slider {
+    position: absolute; cursor: pointer;
+    inset: 0; background: var(--border2);
+    border-radius: 24px; transition: 0.2s;
+  }
+  .switch-slider:before {
+    content: ''; position: absolute;
+    width: 18px; height: 18px;
+    left: 3px; bottom: 3px;
+    background: white; border-radius: 50%;
+    transition: 0.2s;
+  }
+  .switch input:checked + .switch-slider { background: var(--accent); }
+  .switch input:checked + .switch-slider:before { transform: translateX(20px); }
+
+  .share-link-wrap {
+    display: flex; gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px 4px 4px 14px;
+    align-items: center;
+  }
+  .share-link-wrap input {
+    flex: 1; border: none; background: transparent;
+    font-family: monospace; font-size: 12px;
+    color: var(--text); outline: none;
+  }
+  .copy-btn {
+    padding: 7px 14px; border-radius: 8px;
+    border: none; background: var(--accent); color: #fff;
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .copy-btn:hover { opacity: 0.85; }
+  .modal-close {
+    margin-top: 22px;
+    padding: 9px; width: 100%; border-radius: 10px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text2); font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .modal-close:hover { background: var(--surface2); color: var(--text); }
+
+  /* Items en modal de notas compartidas */
+  .shared-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px; border-radius: 10px;
+    background: var(--surface2);
+    margin-bottom: 8px;
+  }
+  .shared-item-info { flex: 1; min-width: 0; }
+  .shared-item-title {
+    font-size: 14px; font-weight: 600; color: var(--text);
+    margin-bottom: 3px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .shared-item-link {
+    font-size: 11px; color: var(--text2);
+    font-family: monospace;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .shared-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .shared-actions button {
+    padding: 6px 10px; border-radius: 7px;
+    font-size: 11px; font-weight: 500;
+    border: 1px solid var(--border);
+    background: #fff; color: var(--text2);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .shared-actions button:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+  .shared-actions button.unshare { color: #b03030; }
+  .shared-actions button.unshare:hover { background: #fce8e8; color: #b03030; border-color: #b03030; }
+  .shared-empty { text-align: center; padding: 30px 10px; color: var(--text3); font-size: 13px; }
+
+  /* VISTA COMPARTIDA (read-only) */
+  body.shared-view .sidebar,
+  body.shared-view .list-panel,
+  body.shared-view .editor-toolbar,
+  body.shared-view .editor-status { display: none; }
+  body.shared-view .editor {
+    background: #ebe5d9;
+  }
+  body.shared-view .editor-body {
+    padding: 40px 20px;
+  }
+  body.shared-view .editor-title-input { pointer-events: none; }
+  body.shared-view .editor-content-area { pointer-events: none; }
+  body.shared-view .tag-select { display: none; }
+  body.shared-view .editor-meta .meta-date { display: none; }
+  .editor-content-area ul, .editor-content-area ol { padding-left: 26px; margin-bottom: 0.8em; }
+  .editor-content-area li { margin-bottom: 4px; }
+
+  /* CHECKLIST */
+  .editor-content-area ul.checklist {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0.8em;
+  }
+  .editor-content-area ul.checklist li {
+    position: relative;
+    padding-left: 30px;
+    margin-bottom: 6px;
+    min-height: 24px;
+  }
+  .editor-content-area ul.checklist li::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 5px;
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--border2);
+    border-radius: 5px;
+    cursor: pointer;
+    background: #fff;
+    transition: all 0.15s;
+  }
+  .editor-content-area ul.checklist li:hover::before {
+    border-color: var(--accent);
+  }
+  .editor-content-area ul.checklist li.done::before {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .editor-content-area ul.checklist li.done::after {
+    content: '';
+    position: absolute;
+    left: 5px; top: 9px;
+    width: 8px; height: 4px;
+    border-left: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    transform: rotate(-45deg);
+    pointer-events: none;
+  }
+  .editor-content-area ul.checklist li.done {
+    text-decoration: line-through;
+    color: var(--text3);
+  }
+
+  .editor-status {
+    padding: 10px 56px; border-top: 1px solid var(--border);
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .status-text { font-size: 11px; color: var(--text3); font-weight: 500; letter-spacing: 0.02em; }
+  .status-saved { color: var(--accent); }
+  .status-unsaved { color: #b07020; }
+
+  .editor-empty {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--text3); gap: 16px;
+  }
+  .editor-empty svg { opacity: 0.2; }
+  .editor-empty p { font-size: 15px; font-family: var(--font-display); font-style: italic; }
+
+  /* LOGIN */
+  .login-overlay {
+    position: fixed; inset: 0;
+    background: var(--bg-grad);
+    display: flex; align-items: center; justify-content: center; z-index: 100;
+  }
+  .login-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 18px; padding: 44px 40px; width: 360px;
+    box-shadow: var(--shadow-lg);
+  }
+  .login-logo {
+    font-family: var(--font-display);
+    font-size: 38px; color: var(--accent);
+    margin-bottom: 8px; font-style: italic; font-weight: 500;
+  }
+  .login-sub { font-size: 13px; color: var(--text2); margin-bottom: 32px; }
+  .login-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: block; font-weight: 500; }
+  .login-input {
+    width: 100%; padding: 11px 14px;
+    border: 1px solid var(--border); border-radius: 10px;
+    background: var(--surface2);
+    font-family: var(--font-body); font-size: 14px;
+    color: var(--text); outline: none; margin-bottom: 16px;
+    transition: all 0.15s;
+  }
+  .login-input:focus { border-color: var(--accent); background: var(--surface); }
+  .login-btn {
+    width: 100%; padding: 12px; border-radius: 10px; border: none;
+    background: var(--accent); color: #fff;
+    font-family: var(--font-body); font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; margin-top: 6px;
+    box-shadow: var(--shadow-sm);
+  }
+  .login-btn:hover { background: var(--accent-hover); }
+  .login-error { font-size: 12px; color: #b03030; margin-top: -10px; margin-bottom: 12px; display: none; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--text); color: #fff;
+    padding: 11px 22px; border-radius: 10px;
+    font-size: 13px; opacity: 0; pointer-events: none;
+    transition: all 0.25s ease; z-index: 200;
+    box-shadow: var(--shadow-lg); font-weight: 500;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .loading-overlay {
+    position: fixed; inset: 0; background: var(--bg-grad);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 50; font-size: 13px; color: var(--text2); gap: 12px;
+  }
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 720px) {
+    .list-panel { width: 220px; }
+    .editor-body { padding: 24px 24px 16px; }
+    .editor-status { padding: 10px 24px; }
+    .editor-title-input { font-size: 28px; }
+  }
+
+  /* IMPRESIÓN / EXPORTAR PDF */
+  @page {
+    size: letter;
+    margin: 0;
+  }
+  @media print {
+    body { background: #fff !important; }
+    .sidebar, .list-panel, .editor-toolbar, .editor-status,
+    .page-indicator, .img-resize-popup, .modal-overlay, .toast,
+    .editor-empty { display: none !important; }
+    .editor, .editor-body { background: #fff !important; padding: 0 !important; overflow: visible !important; }
+    .apa-page {
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+      width: 100% !important;
+      max-width: none !important;
+      min-height: auto !important;
+      padding: 1in !important;
+    }
+    .editor-title-input { border: none !important; }
+    .editor-meta { padding-bottom: 16px; margin-bottom: 24px; min-height: 1px; }
+    .editor-meta .tag-select, .editor-meta .meta-date { display: none !important; }
+    img { outline: none !important; }
+    /* Saltos de página naturales del navegador */
+    p, li, h1, h2, h3 { break-inside: avoid; }
+    table, img { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">✦ Notas</div>
+    <div class="login-sub">Inicia sesión con tu cuenta de Directus</div>
+    <label class="login-label">Correo</label>
+    <input class="login-input" type="email" id="loginEmail" placeholder="tu@email.com" />
+    <label class="login-label">Contraseña</label>
+    <input class="login-input" type="password" id="loginPass" placeholder="••••••••" />
+    <div class="login-error" id="loginError">Credenciales incorrectas</div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay" style="display:none">
+  <div class="spinner"></div> Cargando notas...
+</div>
+
+<div class="sidebar">
+  <div class="logo">✦</div>
+  <button class="sb-btn active" title="Notas">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>
+  </button>
+  <button class="sb-btn" title="Refrescar" onclick="loadNotes()">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+  </button>
+  <button class="sb-btn" title="Notas compartidas" onclick="openSharedListModal()">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+  </button>
+  <div class="sb-spacer"></div>
+  <button class="sb-btn" title="Cerrar sesión" onclick="doLogout()">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+  </button>
+</div>
+
+<div class="list-panel">
+  <div class="list-header">
+    <div class="list-header-row">
+      <span class="list-title">Notas</span>
+      <button class="btn-new" title="Nueva nota" onclick="newNote()">+</button>
+    </div>
+    <div class="search-wrap">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Buscar..." id="searchInput" oninput="filterNotes()" />
+    </div>
+  </div>
+  <div class="tag-filters" id="tagFilters"></div>
+  <div class="notes-list" id="notesList"></div>
+</div>
+
+<div class="editor">
+  <div class="editor-toolbar">
+    <button class="tb-btn" title="Negrita (Ctrl+B)" onclick="execCmd('bold')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>
+    </button>
+    <button class="tb-btn" title="Cursiva (Ctrl+I)" onclick="execCmd('italic')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
+    </button>
+    <button class="tb-btn" title="Subrayado (Ctrl+U)" onclick="execCmd('underline')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v7a6 6 0 0 0 12 0V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg>
+    </button>
+    <button class="tb-btn" title="Insertar enlace (Ctrl+K)" onclick="insertLink()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+    </button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" title="Lista con viñetas" onclick="execCmd('insertUnorderedList')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg>
+    </button>
+    <button class="tb-btn" title="Lista numerada" onclick="execCmd('insertOrderedList')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
+    </button>
+    <button class="tb-btn" title="Casilla de verificación" onclick="insertCheckbox()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    </button>
+    <div class="tb-sep"></div>
+    <!-- APA: encabezados -->
+    <select class="apa-select" onchange="applyHeading(this.value); this.value=''">
+      <option value="" selected disabled>Formato APA</option>
+      <option value="h1">Título (centrado, negrita)</option>
+      <option value="h2">Encabezado 1 (negrita)</option>
+      <option value="h3">Encabezado 2 (negrita cursiva)</option>
+      <option value="p">Texto normal</option>
+      <option value="blockquote">Cita en bloque</option>
+    </select>
+    <button class="tb-btn" title="Insertar tabla" onclick="insertTable()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+    </button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" title="Insertar imagen" onclick="document.getElementById('imageInput').click()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    </button>
+    <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)" />
+    <span class="tb-spacer"></span>
+    <button class="tb-btn" title="Exportar a PDF" onclick="exportToPdf()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+    </button>
+    <button class="tb-btn" title="Compartir" id="btnShare" onclick="openShareModal()" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    </button>
+    <button class="btn-save" id="btnSave" onclick="saveNote()" disabled>Guardar</button>
+    <button class="btn-delete" title="Eliminar nota" id="btnDelete" onclick="deleteNote()" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+    </button>
+  </div>
+
+  <div class="editor-body" id="editorBody">
+    <div class="editor-empty" id="editorEmpty">
+      <svg width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>
+      <p>Selecciona o crea una nota</p>
+    </div>
+    <div id="editorForm" style="display:none; flex-direction:column; width:100%; align-items:center;">
+      <div class="apa-page">
+        <input class="editor-title-input" id="editorTitle" placeholder="Título de la nota" oninput="markDirty()" />
+        <div class="editor-meta">
+          <span class="meta-date" id="editorDate"></span>
+          <input class="tag-select" id="editorTag" list="tagsList" placeholder="+ Agregar tag..." oninput="markDirty()" />
+          <datalist id="tagsList"></datalist>
+        </div>
+        <div class="editor-content-area" id="editorContent" contenteditable="true" data-placeholder="Empieza a escribir tu nota..." oninput="markDirty()"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="editor-status">
+    <span class="status-text" id="statusWords">0 palabras</span>
+    <span class="status-text" id="statusSaved"></span>
+  </div>
+</div>
+
+<!-- Modal lista de notas compartidas -->
+<div class="modal-overlay" id="sharedListModal">
+  <div class="modal-box" style="width: 520px; max-height: 80vh; overflow-y: auto;">
+    <div class="modal-title">Notas compartidas</div>
+    <div class="modal-sub" id="sharedListSub">Estas son las notas que tienes públicas actualmente.</div>
+    <div id="sharedListContent"></div>
+    <button class="modal-close" onclick="document.getElementById('sharedListModal').classList.remove('show')">Cerrar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Popup para redimensionar imágenes -->
+<div class="img-resize-popup" id="imgPopup">
+  <button class="preset-btn" onclick="setImgWidth('25%')">25%</button>
+  <button class="preset-btn" onclick="setImgWidth('50%')">50%</button>
+  <button class="preset-btn" onclick="setImgWidth('75%')">75%</button>
+  <button class="preset-btn" onclick="setImgWidth('100%')">100%</button>
+  <input type="range" id="imgWidthSlider" min="10" max="100" value="50" oninput="setImgWidth(this.value + '%')" />
+  <span style="display:inline-block;width:1px;height:18px;background:#ddd"></span>
+  <button class="preset-btn" title="Alinear izquierda" onclick="setImgAlign('left')" style="font-size:14px;line-height:1">⬅</button>
+  <button class="preset-btn" title="Centrar" onclick="setImgAlign('center')" style="font-size:14px;line-height:1">⬌</button>
+  <button class="preset-btn" title="Alinear derecha" onclick="setImgAlign('right')" style="font-size:14px;line-height:1">➡</button>
+  <span style="display:inline-block;width:1px;height:18px;background:#ddd"></span>
+  <button class="del-btn" onclick="deleteSelectedImage()">Eliminar</button>
+</div>
+
+<!-- Modal compartir -->
+<div class="modal-overlay" id="shareModal">
+  <div class="modal-box">
+    <div class="modal-title">Compartir nota</div>
+    <div class="modal-sub">Activa para crear un enlace público. Cualquiera con el enlace podrá ver la nota sin necesidad de iniciar sesión.</div>
+    <div class="share-toggle">
+      <div class="share-toggle-text">
+        <strong>Compartir públicamente</strong>
+        <small id="shareStatus">Desactivado</small>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="shareToggle" onchange="toggleShare()" />
+        <span class="switch-slider"></span>
+      </label>
+    </div>
+    <div id="shareLinkBox" style="display:none">
+      <div class="share-link-wrap">
+        <input type="text" id="shareLink" readonly />
+        <button class="copy-btn" onclick="copyShareLink()">Copiar</button>
+      </div>
+    </div>
+    <button class="modal-close" onclick="closeShareModal()">Cerrar</button>
+  </div>
+</div>
+
+<script>
+const DIRECTUS = 'https://directus.jbs.red';
+const COLLECTION = 'notas';
+
+const PASTEL_COLORS = [
+  '#FFE8E0', '#E8F0FF', '#E8FFEC', '#FFF4E0',
+  '#F0E8FF', '#FFE8F0', '#E8FFF8', '#FFFCE0',
+  '#F4E8FF', '#E0F4FF', '#E8F8E0', '#FFEFE0',
+];
+
+let token = localStorage.getItem('notas_token') || null;
+let refreshToken = localStorage.getItem('notas_refresh') || null;
+let notes = [];
+let currentId = null;
+let dirty = false;
+let saveTimeout = null;
+let activeTagFilter = null; // null = mostrar todas
+
+// Paleta para colores de tags (consistente por nombre de tag)
+const TAG_PALETTE = [
+  { bg: '#deeaf7', color: '#1a4a7a' },
+  { bg: '#dff0e4', color: '#1a5c2a' },
+  { bg: '#ece8f7', color: '#3d2080' },
+  { bg: '#fce8e8', color: '#7a1a1a' },
+  { bg: '#fef0e0', color: '#7a3d00' },
+  { bg: '#e0f4f5', color: '#0e4e54' },
+  { bg: '#f7e6f0', color: '#6e1c4d' },
+  { bg: '#eaf2d8', color: '#3c5810' },
+];
+
+function colorForTag(tag) {
+  if (!tag) return null;
+  let h = 0;
+  for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) | 0;
+  return TAG_PALETTE[Math.abs(h) % TAG_PALETTE.length];
+}
+
+function getAllTags() {
+  const set = new Set();
+  notes.forEach(n => { if (n.etiqueta && n.etiqueta.trim()) set.add(n.etiqueta.trim()); });
+  return [...set].sort();
+}
+
+function renderTagFilters() {
+  const el = document.getElementById('tagFilters');
+  const tags = getAllTags();
+  let html = `<button class="filter-btn${activeTagFilter === null ? ' active' : ''}" onclick="setTagFilter(null)">Todas</button>`;
+  tags.forEach(t => {
+    const c = colorForTag(t);
+    const style = activeTagFilter === t ? '' : `style="background:${c.bg};color:${c.color};border-color:${c.bg}"`;
+    html += `<button class="filter-btn${activeTagFilter === t ? ' active' : ''}" ${style} onclick="setTagFilter('${escAttr(t)}')">${esc(t)}</button>`;
+  });
+  el.innerHTML = html;
+  // Actualizar el datalist del editor
+  const dl = document.getElementById('tagsList');
+  dl.innerHTML = tags.map(t => `<option value="${escAttr(t)}">`).join('');
+}
+
+function setTagFilter(tag) {
+  activeTagFilter = tag;
+  renderTagFilters();
+  filterNotes();
+}
+
+function escAttr(str) {
+  return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+  try {
+    const r = await fetch(`${DIRECTUS}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error();
+    token = d.data.access_token;
+    refreshToken = d.data.refresh_token;
+    localStorage.setItem('notas_token', token);
+    localStorage.setItem('notas_refresh', refreshToken);
+    document.getElementById('loginOverlay').style.display = 'none';
+    await loadNotes();
+  } catch {
+    errEl.style.display = 'block';
+  }
+}
+document.getElementById('loginPass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+function doLogout() {
+  token = null;
+  refreshToken = null;
+  localStorage.removeItem('notas_token');
+  localStorage.removeItem('notas_refresh');
+  location.reload();
+}
+
+// Intenta refrescar el token usando el refresh_token guardado
+async function tryRefreshToken() {
+  if (!refreshToken) return false;
+  try {
+    const r = await fetch(`${DIRECTUS}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken, mode: 'json' })
+    });
+    if (!r.ok) return false;
+    const d = await r.json();
+    token = d.data.access_token;
+    refreshToken = d.data.refresh_token;
+    localStorage.setItem('notas_token', token);
+    localStorage.setItem('notas_refresh', refreshToken);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function api(path, opts = {}, isRetry = false) {
+  // cache-busting con timestamp en GETs
+  const isGet = !opts.method || opts.method === 'GET';
+  const sep = path.includes('?') ? '&' : '?';
+  const url = `${DIRECTUS}${path}${isGet ? sep + '_=' + Date.now() : ''}`;
+  const r = await fetch(url, {
+    ...opts,
+    cache: 'no-store',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache',
+      ...opts.headers
+    }
+  });
+  if (r.status === 401 && !isRetry) {
+    // Token expirado: intentar refrescar y reintentar
+    const ok = await tryRefreshToken();
+    if (ok) return api(path, opts, true);
+    doLogout();
+    return null;
+  }
+  if (r.status === 401) { doLogout(); return null; }
+  if (!r.ok) throw new Error(await r.text());
+  if (r.status === 204) return null;
+  return r.json();
+}
+
+async function loadNotes(silent = false) {
+  if (!silent) document.getElementById('loadingOverlay').style.display = 'flex';
+  try {
+    const d = await api(`/items/${COLLECTION}?sort[]=-date_created&limit=200`);
+    notes = d ? d.data : [];
+    renderTagFilters();
+    filterNotes();
+  } catch(e) {
+    if (!silent) showToast('Error al cargar notas');
+  }
+  if (!silent) document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+function colorForNote(id) {
+  const idx = Math.abs(Number(id) || 0) % PASTEL_COLORS.length;
+  return PASTEL_COLORS[idx];
+}
+
+function stripHtml(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html || '';
+  return tmp.textContent || tmp.innerText || '';
+}
+
+function renderList(list) {
+  const el = document.getElementById('notesList');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-list"><svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg><p>Sin notas aún.<br>Crea una con el botón +</p></div>`;
+    return;
+  }
+  el.innerHTML = list.map(n => {
+    const color = colorForNote(n.id);
+    const preview = stripHtml(n.contenido || '').replace(/\s+/g, ' ').slice(0, 70);
+    const date = formatDate(n.date_updated || n.date_created);
+    const tag = (n.etiqueta || '').trim();
+    let tagHtml = '';
+    if (tag) {
+      const c = colorForTag(tag);
+      tagHtml = `<span class="note-item-tag" style="--tag-bg:${c.bg};--tag-color:${c.color}">${esc(tag)}</span>`;
+    }
+    return `<div class="note-item${n.id === currentId ? ' active' : ''}" onclick="openNote(${n.id})" style="--note-bg: ${color}">
+      <div class="note-item-title">${esc(n.titulo || 'Sin título')}</div>
+      ${tagHtml}
+      <div class="note-item-preview">${esc(preview) || '...'}</div>
+      <div class="note-item-date">${date}</div>
+    </div>`;
+  }).join('');
+}
+
+function filterNotes() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  let filtered = notes;
+  if (activeTagFilter !== null) {
+    filtered = filtered.filter(n => (n.etiqueta || '').trim() === activeTagFilter);
+  }
+  if (q) {
+    filtered = filtered.filter(n =>
+      (n.titulo || '').toLowerCase().includes(q) ||
+      stripHtml(n.contenido || '').toLowerCase().includes(q) ||
+      (n.etiqueta || '').toLowerCase().includes(q)
+    );
+  }
+  renderList(filtered);
+}
+
+function openNote(id) {
+  if (dirty && !confirm('Tienes cambios sin guardar. ¿Descartar?')) return;
+  currentId = id;
+  const n = notes.find(x => x.id === id);
+  if (!n) return;
+  document.getElementById('editorEmpty').style.display = 'none';
+  document.getElementById('editorForm').style.display = 'flex';
+  document.getElementById('editorTitle').value = n.titulo || '';
+  document.getElementById('editorContent').innerHTML = n.contenido || '';
+  document.getElementById('editorTag').value = n.etiqueta || '';
+  document.getElementById('editorDate').textContent = formatDate(n.date_updated || n.date_created);
+  document.getElementById('btnDelete').style.display = 'flex';
+  document.getElementById('btnShare').style.display = 'flex';
+  document.getElementById('btnSave').disabled = true;
+  dirty = false;
+  document.execCommand('defaultParagraphSeparator', false, 'p');
+  updateStatus();
+  filterNotes();
+  migrateOldCheckboxes();
+  setTimeout(updatePageIndicator, 100);
+}
+
+function newNote() {
+  if (dirty && !confirm('Tienes cambios sin guardar. ¿Descartar?')) return;
+  currentId = null;
+  document.getElementById('editorEmpty').style.display = 'none';
+  document.getElementById('editorForm').style.display = 'flex';
+  document.getElementById('editorTitle').value = '';
+  document.getElementById('editorContent').innerHTML = '<p><br></p>';
+  document.getElementById('editorTag').value = '';
+  document.getElementById('editorDate').textContent = 'Nueva nota';
+  document.getElementById('btnDelete').style.display = 'none';
+  document.getElementById('btnShare').style.display = 'none';
+  document.getElementById('btnSave').disabled = false;
+  document.execCommand('defaultParagraphSeparator', false, 'p');
+  document.getElementById('editorTitle').focus();
+  dirty = true;
+  updateStatus();
+}
+
+async function saveNote(silent = false) {
+  const titulo   = document.getElementById('editorTitle').value.trim() || 'Sin título';
+  const contenido = document.getElementById('editorContent').innerHTML;
+  const etiqueta = document.getElementById('editorTag').value.trim();
+  const payload = { titulo, contenido, etiqueta };
+  try {
+    if (currentId) {
+      await api(`/items/${COLLECTION}/${currentId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+      const idx = notes.findIndex(n => n.id === currentId);
+      if (idx > -1) notes[idx] = { ...notes[idx], ...payload, date_updated: new Date().toISOString() };
+    } else {
+      const d = await api(`/items/${COLLECTION}`, { method: 'POST', body: JSON.stringify(payload) });
+      notes.unshift(d.data);
+      currentId = d.data.id;
+      document.getElementById('btnDelete').style.display = 'flex';
+    }
+    dirty = false;
+    document.getElementById('btnSave').disabled = true;
+    document.getElementById('editorDate').textContent = formatDate(new Date().toISOString());
+    renderTagFilters();
+    filterNotes();
+    if (!silent) showToast('Nota guardada ✓');
+    document.getElementById('statusSaved').textContent = 'Guardado ✓';
+    document.getElementById('statusSaved').className = 'status-text status-saved';
+  } catch(e) {
+    if (!silent) showToast('Error al guardar');
+  }
+}
+
+async function deleteNote() {
+  if (!currentId) return;
+  if (!confirm('¿Eliminar esta nota?')) return;
+  try {
+    await api(`/items/${COLLECTION}/${currentId}`, { method: 'DELETE' });
+    notes = notes.filter(n => n.id !== currentId);
+    currentId = null;
+    dirty = false;
+    document.getElementById('editorEmpty').style.display = 'flex';
+    document.getElementById('editorForm').style.display = 'none';
+    document.getElementById('btnDelete').style.display = 'none';
+    renderTagFilters();
+    filterNotes();
+    showToast('Nota eliminada');
+  } catch {
+    showToast('Error al eliminar');
+  }
+}
+
+function markDirty() {
+  dirty = true;
+  document.getElementById('btnSave').disabled = false;
+  document.getElementById('statusSaved').textContent = 'Sin guardar';
+  document.getElementById('statusSaved').className = 'status-text status-unsaved';
+  updateStatus();
+}
+
+function updateStatus() {
+  const text = stripHtml(document.getElementById('editorContent').innerHTML);
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  document.getElementById('statusWords').textContent = `${words} palabra${words !== 1 ? 's' : ''}`;
+}
+
+function execCmd(cmd) {
+  document.getElementById('editorContent').focus();
+  document.execCommand(cmd, false, null);
+  markDirty();
+}
+
+// Insertar / editar enlace
+function insertLink() {
+  const editor = document.getElementById('editorContent');
+  editor.focus();
+  const sel = window.getSelection();
+  // Si el cursor está sobre un enlace existente, ofrecer editarlo o quitarlo
+  let existingLink = null;
+  if (sel.anchorNode) {
+    const node = sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement;
+    existingLink = node?.closest?.('a');
+  }
+  if (existingLink) {
+    const newUrl = prompt('Editar enlace (deja vacío para quitar):', existingLink.href);
+    if (newUrl === null) return;
+    if (newUrl.trim() === '') {
+      // Reemplazar el <a> con su texto
+      const text = document.createTextNode(existingLink.textContent);
+      existingLink.parentNode.replaceChild(text, existingLink);
+    } else {
+      existingLink.href = normalizeUrl(newUrl);
+    }
+    markDirty();
+    return;
+  }
+  // Insertar nuevo enlace
+  const url = prompt('URL del enlace:', 'https://');
+  if (!url || url.trim() === '' || url.trim() === 'https://') return;
+  const finalUrl = normalizeUrl(url);
+  if (sel.toString().trim() === '') {
+    // Sin selección — insertar el URL como texto y enlace
+    document.execCommand('insertHTML', false, `<a href="${escAttr(finalUrl)}" target="_blank" rel="noopener">${esc(finalUrl)}</a>`);
+  } else {
+    document.execCommand('createLink', false, finalUrl);
+    // Asegurar target="_blank" en el link creado
+    setTimeout(() => {
+      editor.querySelectorAll('a:not([target])').forEach(a => {
+        a.target = '_blank';
+        a.rel = 'noopener';
+      });
+    }, 0);
+  }
+  markDirty();
+}
+
+function normalizeUrl(url) {
+  url = url.trim();
+  if (!/^https?:\/\//i.test(url) && !/^mailto:/i.test(url)) {
+    url = 'https://' + url;
+  }
+  return url;
+}
+
+// APA: aplicar formato de encabezado
+function applyHeading(tag) {
+  if (!tag) return;
+  document.getElementById('editorContent').focus();
+  document.execCommand('formatBlock', false, tag);
+  markDirty();
+}
+
+// APA: insertar tabla
+function insertTable() {
+  const rowsStr = prompt('Número de filas:', '3');
+  if (!rowsStr) return;
+  const colsStr = prompt('Número de columnas:', '3');
+  if (!colsStr) return;
+  const rows = Math.max(1, Math.min(20, parseInt(rowsStr) || 3));
+  const cols = Math.max(1, Math.min(10, parseInt(colsStr) || 3));
+  const colWidth = (100 / cols).toFixed(2) + '%';
+  let html = '<table><colgroup>';
+  for (let c = 0; c < cols; c++) html += `<col style="width:${colWidth}">`;
+  html += '</colgroup><thead><tr>';
+  for (let c = 0; c < cols; c++) html += `<th>Encabezado ${c+1}</th>`;
+  html += '</tr></thead><tbody>';
+  for (let r = 0; r < rows; r++) {
+    html += '<tr>';
+    for (let c = 0; c < cols; c++) html += '<td><br></td>';
+    html += '</tr>';
+  }
+  html += '</tbody></table><p><br></p>';
+  document.getElementById('editorContent').focus();
+  document.execCommand('insertHTML', false, html);
+  markDirty();
+}
+
+// ── IMÁGENES ──────────────────────────────────────────────────
+let selectedImg = null;
+
+function handleImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('Imagen muy grande (máx 5MB)');
+    e.target.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = ev => insertImage(ev.target.result);
+  reader.readAsDataURL(file);
+  e.target.value = ''; // permite re-seleccionar la misma imagen
+}
+
+function insertImage(dataUrl) {
+  const editor = document.getElementById('editorContent');
+  editor.focus();
+  const html = `<img src="${dataUrl}" style="width: 50%;"><p><br></p>`;
+  document.execCommand('insertHTML', false, html);
+  markDirty();
+}
+
+// Pegar imagen desde portapapeles (Ctrl+V)
+document.getElementById('editorContent').addEventListener('paste', e => {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      const file = item.getAsFile();
+      const reader = new FileReader();
+      reader.onload = ev => insertImage(ev.target.result);
+      reader.readAsDataURL(file);
+      return;
+    }
+  }
+});
+
+// Arrastrar imagen al editor
+document.getElementById('editorContent').addEventListener('drop', e => {
+  const file = e.dataTransfer?.files?.[0];
+  if (file && file.type.startsWith('image/')) {
+    e.preventDefault();
+    const reader = new FileReader();
+    reader.onload = ev => insertImage(ev.target.result);
+    reader.readAsDataURL(file);
+  }
+});
+
+// Click en imagen → mostrar popup de redimensionado
+document.getElementById('editorContent').addEventListener('click', e => {
+  // Deseleccionar imagen previa
+  if (selectedImg) selectedImg.classList.remove('selected');
+  if (e.target.tagName === 'IMG') {
+    selectedImg = e.target;
+    selectedImg.classList.add('selected');
+    showImgPopup(selectedImg);
+  } else {
+    selectedImg = null;
+    document.getElementById('imgPopup').classList.remove('show');
+  }
+});
+
+function showImgPopup(img) {
+  const popup = document.getElementById('imgPopup');
+  const rect = img.getBoundingClientRect();
+  popup.classList.add('show');
+  // Posicionar arriba de la imagen (o abajo si no cabe)
+  const popupRect = popup.getBoundingClientRect();
+  let top = rect.top - popupRect.height - 10;
+  if (top < 10) top = rect.bottom + 10;
+  let left = rect.left + rect.width / 2 - popupRect.width / 2;
+  if (left < 10) left = 10;
+  if (left + popupRect.width > window.innerWidth - 10) left = window.innerWidth - popupRect.width - 10;
+  popup.style.top = top + 'px';
+  popup.style.left = left + 'px';
+  // Sincronizar el slider con el ancho actual
+  const currentWidth = img.style.width || '50%';
+  const widthNum = parseInt(currentWidth);
+  if (!isNaN(widthNum)) document.getElementById('imgWidthSlider').value = widthNum;
+}
+
+function setImgWidth(width) {
+  if (!selectedImg) return;
+  selectedImg.style.width = width;
+  // No re-posicionamos el popup: lo dejamos donde está para que el slider no parpadee
+  markDirty();
+}
+
+function setImgAlign(align) {
+  if (!selectedImg) return;
+  if (align === 'center') {
+    selectedImg.style.display = 'block';
+    selectedImg.style.marginLeft = 'auto';
+    selectedImg.style.marginRight = 'auto';
+    selectedImg.style.float = '';
+  } else if (align === 'left') {
+    selectedImg.style.display = 'block';
+    selectedImg.style.marginLeft = '0';
+    selectedImg.style.marginRight = 'auto';
+    selectedImg.style.float = '';
+  } else if (align === 'right') {
+    selectedImg.style.display = 'block';
+    selectedImg.style.marginLeft = 'auto';
+    selectedImg.style.marginRight = '0';
+    selectedImg.style.float = '';
+  }
+  showImgPopup(selectedImg);
+  markDirty();
+}
+
+function deleteSelectedImage() {
+  if (!selectedImg) return;
+  selectedImg.remove();
+  selectedImg = null;
+  document.getElementById('imgPopup').classList.remove('show');
+  markDirty();
+}
+
+// Cerrar popup al hacer scroll o resize
+window.addEventListener('scroll', () => {
+  if (selectedImg) {
+    selectedImg.classList.remove('selected');
+    selectedImg = null;
+    document.getElementById('imgPopup').classList.remove('show');
+  }
+}, true);
+
+function insertCheckbox() {
+  const editor = document.getElementById('editorContent');
+  editor.focus();
+  // Inserta una lista checklist con un item vacío listo para escribir
+  const html = `<ul class="checklist"><li>&nbsp;</li></ul><p><br></p>`;
+  document.execCommand('insertHTML', false, html);
+  // Coloca el cursor dentro del primer item y limpia el &nbsp;
+  setTimeout(() => {
+    const li = editor.querySelector('ul.checklist li');
+    if (li) {
+      li.innerHTML = '';
+      const range = document.createRange();
+      range.setStart(li, 0);
+      range.collapse(true);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  }, 0);
+  markDirty();
+}
+
+// Click sobre el cuadrito (área izquierda del li) para marcar/desmarcar
+document.getElementById('editorContent').addEventListener('click', e => {
+  const li = e.target.closest('ul.checklist > li');
+  if (!li) return;
+  const rect = li.getBoundingClientRect();
+  // Si el click cae en la zona del checkbox (primeros 26px)
+  if (e.clientX - rect.left <= 26) {
+    e.preventDefault();
+    li.classList.toggle('done');
+    markDirty();
+  }
+});
+
+// Markdown shortcuts: "* " → viñetas, "1. " → numerada, "[] " → casillas
+document.getElementById('editorContent').addEventListener('keydown', e => {
+  if (e.key !== ' ') return;
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  const node = range.startContainer;
+  if (node.nodeType !== 3) return; // solo nodos de texto
+  const text = node.textContent.slice(0, range.startOffset);
+
+  // Buscar bloque padre (p o div directo del editor)
+  let block = node.parentElement;
+  while (block && block.parentElement && block.parentElement.id !== 'editorContent') {
+    block = block.parentElement;
+  }
+  if (!block || block.id === 'editorContent') return;
+
+  // Detectar patrones al inicio del bloque
+  const blockText = block.textContent.slice(0, range.startOffset + (block.textContent.length - node.textContent.length));
+  const trimmed = blockText.replace(/^\s+/, '');
+
+  if (text === '*' && trimmed === '*') {
+    e.preventDefault();
+    block.remove();
+    document.execCommand('insertUnorderedList');
+    markDirty();
+  } else if (text === '1.' && trimmed === '1.') {
+    e.preventDefault();
+    block.remove();
+    document.execCommand('insertOrderedList');
+    markDirty();
+  } else if ((text === '[]' || text === '[ ]') && (trimmed === '[]' || trimmed === '[ ]')) {
+    e.preventDefault();
+    block.remove();
+    insertCheckbox();
+  }
+});
+
+// Compatibilidad con notas viejas: convierte .task-item al nuevo formato al cargar
+function migrateOldCheckboxes() {
+  const editor = document.getElementById('editorContent');
+  const oldItems = editor.querySelectorAll('.task-item');
+  if (!oldItems.length) return;
+  // Agrupar items consecutivos en un solo ul.checklist
+  let currentUl = null;
+  oldItems.forEach(item => {
+    const text = item.querySelector('.task-text')?.textContent || '';
+    const checked = item.querySelector('input[type="checkbox"]')?.checked || false;
+    const li = document.createElement('li');
+    li.textContent = text;
+    if (checked) li.classList.add('done');
+    if (!currentUl || item.previousElementSibling !== currentUl) {
+      currentUl = document.createElement('ul');
+      currentUl.className = 'checklist';
+      item.parentNode.insertBefore(currentUl, item);
+    }
+    currentUl.appendChild(li);
+    item.remove();
+  });
+}
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); if (dirty) saveNote(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    if (document.activeElement && document.activeElement.id === 'editorContent') {
+      e.preventDefault();
+      insertLink();
+    }
+  }
+});
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = now - d;
+  if (diff < 86400000 && now.getDate() === d.getDate()) return 'Hoy, ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  if (diff < 172800000) return 'Ayer';
+  return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+}
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── COMPARTIR ─────────────────────────────────────────────────
+function openShareModal() {
+  if (!currentId) return;
+  const n = notes.find(x => x.id === currentId);
+  if (!n) return;
+  document.getElementById('shareModal').classList.add('show');
+  const toggle = document.getElementById('shareToggle');
+  toggle.checked = !!n.compartido;
+  updateShareUI(n);
+}
+
+function closeShareModal() {
+  document.getElementById('shareModal').classList.remove('show');
+}
+
+function updateShareUI(n) {
+  const isShared = !!n.compartido;
+  document.getElementById('shareStatus').textContent = isShared ? 'Activado' : 'Desactivado';
+  const linkBox = document.getElementById('shareLinkBox');
+  if (isShared && n.share_token) {
+    linkBox.style.display = 'block';
+    const url = `${location.origin}${location.pathname}?share=${n.share_token}`;
+    document.getElementById('shareLink').value = url;
+  } else {
+    linkBox.style.display = 'none';
+  }
+}
+
+async function toggleShare() {
+  if (!currentId) return;
+  const n = notes.find(x => x.id === currentId);
+  if (!n) return;
+  const enable = document.getElementById('shareToggle').checked;
+  let payload;
+  if (enable) {
+    const token_share = n.share_token || crypto.randomUUID();
+    payload = { compartido: true, share_token: token_share };
+  } else {
+    payload = { compartido: false };
+  }
+  try {
+    await api(`/items/${COLLECTION}/${currentId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+    Object.assign(n, payload);
+    updateShareUI(n);
+    showToast(enable ? 'Nota compartida' : 'Nota privada');
+  } catch (err) {
+    showToast('Error: ¿agregaste los campos en Directus?');
+    document.getElementById('shareToggle').checked = !enable;
+  }
+}
+
+function copyShareLink() {
+  const inp = document.getElementById('shareLink');
+  inp.select();
+  navigator.clipboard.writeText(inp.value).then(() => showToast('Enlace copiado'));
+}
+
+// Exportar a PDF usando print del navegador
+function exportToPdf() {
+  // Sugerir nombre del archivo basado en el título
+  const titulo = document.getElementById('editorTitle').value.trim() || 'Nota';
+  const originalTitle = document.title;
+  document.title = titulo;
+  showToast('Selecciona "Guardar como PDF" en el cuadro de diálogo');
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { document.title = originalTitle; }, 500);
+  }, 300);
+}
+
+// Lista de notas compartidas
+function openSharedListModal() {
+  const shared = notes.filter(n => n.compartido && n.share_token);
+  const modal = document.getElementById('sharedListModal');
+  const content = document.getElementById('sharedListContent');
+  const sub = document.getElementById('sharedListSub');
+  sub.textContent = shared.length === 0
+    ? 'No tienes notas compartidas.'
+    : `Tienes ${shared.length} nota${shared.length !== 1 ? 's' : ''} compartida${shared.length !== 1 ? 's' : ''}.`;
+  if (shared.length === 0) {
+    content.innerHTML = '<div class="shared-empty">No hay notas públicas. Para compartir una nota, ábrela y dale clic al botón de compartir en el toolbar.</div>';
+  } else {
+    content.innerHTML = shared.map(n => {
+      const url = `${location.origin}${location.pathname}?share=${n.share_token}`;
+      return `<div class="shared-item">
+        <div class="shared-item-info">
+          <div class="shared-item-title">${esc(n.titulo || 'Sin título')}</div>
+          <div class="shared-item-link">${esc(url)}</div>
+        </div>
+        <div class="shared-actions">
+          <button onclick="copyLinkFromList('${escAttr(url)}')">Copiar</button>
+          <button onclick="openNoteFromList(${n.id}); document.getElementById('sharedListModal').classList.remove('show')">Abrir</button>
+          <button class="unshare" onclick="unshareFromList(${n.id})">Dejar de compartir</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  modal.classList.add('show');
+}
+
+function copyLinkFromList(url) {
+  navigator.clipboard.writeText(url).then(() => showToast('Enlace copiado'));
+}
+
+function openNoteFromList(id) {
+  openNote(id);
+}
+
+async function unshareFromList(id) {
+  if (!confirm('¿Dejar de compartir esta nota? El enlace dejará de funcionar.')) return;
+  try {
+    await api(`/items/${COLLECTION}/${id}`, { method: 'PATCH', body: JSON.stringify({ compartido: false }) });
+    const n = notes.find(x => x.id === id);
+    if (n) n.compartido = false;
+    openSharedListModal(); // re-render
+    showToast('Nota privada');
+  } catch {
+    showToast('Error al actualizar');
+  }
+}
+
+// Contador de páginas aproximado (basado en altura del contenido)
+function updatePageIndicator() {
+  const page = document.querySelector('.apa-page');
+  if (!page) {
+    document.getElementById('pageIndicator')?.classList.remove('show');
+    return;
+  }
+  const totalPages = Math.max(1, Math.ceil(page.offsetHeight / 1056));
+  let indicator = document.getElementById('pageIndicator');
+  if (!indicator) {
+    indicator = document.createElement('div');
+    indicator.id = 'pageIndicator';
+    indicator.className = 'page-indicator';
+    document.body.appendChild(indicator);
+  }
+  indicator.textContent = totalPages === 1 ? '~1 página' : `~${totalPages} páginas`;
+  indicator.classList.add('show');
+}
+
+document.getElementById('editorContent').addEventListener('input', () => {
+  clearTimeout(window._pageTimer);
+  window._pageTimer = setTimeout(updatePageIndicator, 200);
+});
+
+// ── MODO COMPARTIDO (sin login, read-only) ─────────────────────
+async function loadSharedNote(shareToken) {
+  document.body.classList.add('shared-view');
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('loadingOverlay').style.display = 'flex';
+  try {
+    const r = await fetch(`${DIRECTUS}/items/${COLLECTION}?filter[share_token][_eq]=${encodeURIComponent(shareToken)}&filter[compartido][_eq]=true&limit=1`);
+    const d = await r.json();
+    if (!d.data || !d.data.length) {
+      document.body.innerHTML = `<div style="text-align:center;padding:80px;font-family:'Inter',sans-serif"><h2 style="font-family:'Fraunces',serif;font-size:32px;color:#2d4a3e">Nota no encontrada</h2><p style="color:#6b6760;margin-top:12px">Esta nota no existe o dejó de ser pública.</p></div>`;
+      return;
+    }
+    const n = d.data[0];
+    document.getElementById('editorEmpty').style.display = 'none';
+    document.getElementById('editorForm').style.display = 'flex';
+    document.getElementById('editorTitle').value = n.titulo || 'Sin título';
+    document.getElementById('editorContent').innerHTML = n.contenido || '';
+    document.getElementById('editorTag').value = n.etiqueta || '';
+    document.getElementById('editorDate').textContent = formatDate(n.date_updated || n.date_created);
+    document.getElementById('editorContent').setAttribute('contenteditable', 'false');
+    document.getElementById('editorTitle').setAttribute('readonly', 'true');
+  } catch (e) {
+    document.body.innerHTML = `<div style="text-align:center;padding:80px;font-family:'Inter',sans-serif"><h2>Error</h2><p>No se pudo cargar la nota.</p></div>`;
+  }
+  document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+// (Sin auto-refresco — usa el botón circular en la barra lateral para refrescar manualmente)
+
+// ── INIT ──────────────────────────────────────────────
+// Si la URL trae ?share=TOKEN, mostrar la nota compartida sin login
+const urlParams = new URLSearchParams(location.search);
+const shareTokenParam = urlParams.get('share');
+if (shareTokenParam) {
+  loadSharedNote(shareTokenParam);
+} else if (token) {
+  document.getElementById('loginOverlay').style.display = 'none';
+  loadNotes();
+}
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"9a547aede481468b98ba4635d0f27aa2","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
